@@ -1,4 +1,9 @@
-import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragEndEvent,
+  useDraggable,
+  useDroppable,
+} from "@dnd-kit/core";
 import { PlusIcon } from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
@@ -11,11 +16,15 @@ type TCard = {
   genre: string;
 };
 
+function hasKey<O extends Object>(obj: O, key: PropertyKey): key is keyof O {
+  return key in obj;
+}
+
 const Dashboard: NextPage = () => {
   /**
    * This is required due a React hydration error. Specifically, the input element
    * causes the following error:
-   * - "Expected server HTML to contain a matching <input> in <div>."
+   *   "Expected server HTML to contain a matching <input> in <div>."
    *
    * Source: https://github.com/vercel/next.js/discussions/17443#discussioncomment-637879
    */
@@ -25,58 +34,116 @@ const Dashboard: NextPage = () => {
     setMounted(true);
   }, []);
 
-  const toWatchCards: TCard[] = [
-    {
-      title: "Inception",
-      type: "movie",
-      posterPath: "/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
-      genre: "action",
+  const [laneState, setLaneState] = useState({
+    "ac22cf17-c3ba-4f47-991b-1d564a8c8d73": {
+      name: "Want to Watch",
+      cards: [
+        {
+          title: "Inception",
+          type: "movie",
+          posterPath: "/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
+          genre: "action",
+        },
+        {
+          title: "Breaking Bad",
+          type: "show",
+          posterPath: "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+          genre: "drama",
+        },
+      ],
     },
-    {
-      title: "Breaking Bad",
-      type: "show",
-      posterPath: "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
-      genre: "drama",
+    "1ea5c16d-fd47-41f5-b5ab-78d9c788d25c": { name: "Watching", cards: [] },
+    "8ce42a21-1ed7-46c4-a22c-e810a55eed9a": {
+      name: "Watched",
+      cards: [
+        {
+          title: "Succession",
+          type: "show",
+          genre: "drama",
+          posterPath: "/7HW47XbkNQ5fiwQFYGWdw9gs144.jpg",
+        },
+      ],
     },
-  ];
+  });
 
-  const watchedCards: TCard[] = [
-    {
-      title: "Succession",
-      type: "show",
-      genre: "drama",
-      posterPath: "/7HW47XbkNQ5fiwQFYGWdw9gs144.jpg",
-    },
-  ];
+  const flattenedLaneState = Object.entries(laneState).flatMap(([id, lane]) => {
+    return lane.cards.map((card) => ({ ...card, lane: id }));
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (event.over) {
+      const movedCardId = event.active.id;
+
+      // Get from lane and to lane
+      const toLaneId = event.over.id;
+      const fromLaneId = flattenedLaneState.find(
+        (card) => card.title === event.active.id
+      )?.lane;
+
+      if (fromLaneId === toLaneId || !fromLaneId) return;
+
+      setLaneState((prev) => {
+        if (hasKey(prev, toLaneId) && hasKey(prev, fromLaneId)) {
+          const fromLane = prev[fromLaneId];
+          const toLane = prev[toLaneId];
+
+          const movedCard = fromLane.cards.find(
+            (card) => card.title === movedCardId
+          );
+
+          const updatedToLaneCards = [...toLane.cards, movedCard];
+          const updatedFromLaneCards = fromLane.cards.filter(
+            (card) => card.title !== movedCardId
+          );
+
+          return {
+            ...prev,
+            [toLaneId]: {
+              ...toLane,
+              cards: updatedToLaneCards,
+            },
+            [fromLaneId]: {
+              ...fromLane,
+              cards: updatedFromLaneCards,
+            },
+          };
+        }
+
+        return prev;
+      });
+    }
+  };
 
   return mounted ? (
-    <DndContext>
+    <DndContext onDragEnd={handleDragEnd}>
       <div
         className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
       via-purple-900 to-violet-700"
       >
-        <Lane name="Want to Watch" cards={toWatchCards} />
-        <Lane name="Watching" cards={[]} />
-        <Lane name="Watched" cards={watchedCards} />
+        {Object.entries(laneState).map(([id, lane]) => {
+          return <Lane key={id} id={id} name={lane.name} cards={lane.cards} />;
+        })}
       </div>
     </DndContext>
   ) : null;
 };
 
-const Lane = ({ name, cards }: { name: string; cards: TCard[] }) => {
-  const { isOver, setNodeRef } = useDroppable({
-    id: name,
-  });
-
-  if (isOver) {
-    console.log("isOver");
-  }
+const Lane = ({
+  id,
+  name,
+  cards,
+}: {
+  id: string;
+  name: string;
+  cards: TCard[];
+}) => {
+  const { isOver, setNodeRef } = useDroppable({ id });
 
   return (
     <div
       ref={setNodeRef}
       className={`h-3/4 w-72 rounded-md ${
-        isOver ? "bg-slate-400" : "bg-slate-300"
+        isOver ? "bg-slate-400" : "bg-slate-100"
       } shadow-xl`}
     >
       <div className="flex items-center justify-between px-4 pt-3">
