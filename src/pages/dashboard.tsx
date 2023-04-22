@@ -1,6 +1,8 @@
+import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
+import { PlusIcon } from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
-import { PlusIcon } from "@heroicons/react/24/solid";
+import { useEffect, useState } from "react";
 
 type TCard = {
   title: string;
@@ -10,6 +12,19 @@ type TCard = {
 };
 
 const Dashboard: NextPage = () => {
+  /**
+   * This is required due a React hydration error. Specifically, the input element
+   * causes the following error:
+   * - "Expected server HTML to contain a matching <input> in <div>."
+   *
+   * Source: https://github.com/vercel/next.js/discussions/17443#discussioncomment-637879
+   */
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const toWatchCards: TCard[] = [
     {
       title: "Inception",
@@ -34,21 +49,36 @@ const Dashboard: NextPage = () => {
     },
   ];
 
-  return (
-    <div
-      className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
-    via-purple-900 to-violet-700"
-    >
-      <Lane name="Want to Watch" cards={toWatchCards} />
-      <Lane name="Watching" cards={[]} />
-      <Lane name="Watched" cards={watchedCards} />
-    </div>
-  );
+  return mounted ? (
+    <DndContext>
+      <div
+        className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
+      via-purple-900 to-violet-700"
+      >
+        <Lane name="Want to Watch" cards={toWatchCards} />
+        <Lane name="Watching" cards={[]} />
+        <Lane name="Watched" cards={watchedCards} />
+      </div>
+    </DndContext>
+  ) : null;
 };
 
 const Lane = ({ name, cards }: { name: string; cards: TCard[] }) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: name,
+  });
+
+  if (isOver) {
+    console.log("isOver");
+  }
+
   return (
-    <div className="h-3/4 w-72 rounded-md bg-slate-300 shadow-xl">
+    <div
+      ref={setNodeRef}
+      className={`h-3/4 w-72 rounded-md ${
+        isOver ? "bg-slate-400" : "bg-slate-300"
+      } shadow-xl`}
+    >
       <div className="flex items-center justify-between px-4 pt-3">
         <h3 className="text-2xl font-bold">{name}</h3>
         <button className="justify flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-white">
@@ -67,8 +97,24 @@ const Lane = ({ name, cards }: { name: string; cards: TCard[] }) => {
 };
 
 const Card = ({ title, type, posterPath, genre }: TCard) => {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: title,
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
+
   return (
-    <div className="m-3 flex cursor-pointer justify-between rounded-md bg-zinc-700 p-2 text-zinc-200 shadow-md">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className="m-3 flex justify-between rounded-md bg-zinc-700 p-2 text-zinc-200 shadow-md"
+    >
       <div>
         <p className="font-bold">{title}</p>
         <p className="text-sm">{type}</p>
