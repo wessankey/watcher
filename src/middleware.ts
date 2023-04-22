@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { getAuth, withClerkMiddleware } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const publicPaths = ["/", "/sign-in*", "/sign-up*"];
 
@@ -9,16 +9,16 @@ const isPublic = (path: string) => {
   );
 };
 
-export default withClerkMiddleware((request: NextRequest) => {
-  if (isPublic(request.nextUrl.pathname)) {
+export default withClerkMiddleware((req: NextRequest) => {
+  if (isPublic(req.nextUrl.pathname)) {
     return NextResponse.next();
   }
 
-  const { userId } = getAuth(request);
+  const { userId } = getAuth(req);
 
   if (!userId) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect_url", request.url);
+    const signInUrl = new URL("/sign-in", req.url);
+    signInUrl.searchParams.set("redirect_url", req.url);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -27,15 +27,5 @@ export default withClerkMiddleware((request: NextRequest) => {
 
 // Stop Middleware running on static files and public folder
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next
-     * - static (static files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!static|.*\\..*|_next|favicon.ico).*)",
-    "/",
-  ],
+  matcher: ["/((?!_next/image|_next/static|favicon.ico).*)", "/"],
 };

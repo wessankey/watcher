@@ -1,9 +1,17 @@
 import { type Config } from "tailwindcss";
+import { fontFamily } from "tailwindcss/defaultTheme";
 
 export default {
-  content: ["./src/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "node_modules/flowbite-react/**/*.{js,jsx,ts,tsx}",
+  ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ["var(--font-poppins)", ...fontFamily.sans],
+      },
+    },
   },
-  plugins: [],
+  plugins: [require("flowbite/plugin"), require("@tailwindcss/line-clamp")],
 } satisfies Config;
