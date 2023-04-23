@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "~/components/common/Modal";
 import debounce from "lodash.debounce";
 import { api } from "~/utils/api";
+import { TSearchResult } from "~/server/api/routers/dashboard";
 
 type TCard = {
   title: string;
@@ -247,16 +248,34 @@ const AddCardModal = ({
           <MediaSearch />
         </div>
       }
+      footer={
+        <div className="flex justify-end gap-5">
+          <button
+            onClick={onClose}
+            className="rounded-md bg-red-700 px-3 py-1 text-white"
+          >
+            Cancel
+          </button>
+          <button className="rounded-md bg-blue-700 px-3 py-1 text-white">
+            Add
+          </button>
+        </div>
+      }
     ></Modal>
   );
 };
 
 const MediaSearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedResult, setSelectedResult] = useState<TSearchResult>();
 
   const onUpdate = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   }, 500);
+
+  const onSelectResult = (result: TSearchResult) => {
+    setSelectedResult(result);
+  };
 
   const { data } = api.dashboard.search.useQuery({ text: searchTerm || "" });
 
@@ -267,6 +286,66 @@ const MediaSearch = () => {
         type="text"
         placeholder="Search for a movie or show"
         onChange={onUpdate}
+      />
+      {selectedResult ? (
+        <SearchResultItem result={selectedResult} />
+      ) : (
+        <SearchResultList
+          results={data || []}
+          onSelectResult={onSelectResult}
+        />
+      )}
+    </div>
+  );
+};
+
+const SearchResultList = ({
+  results,
+  onSelectResult,
+}: {
+  results: TSearchResult[];
+  onSelectResult: (result: TSearchResult) => void;
+}) => {
+  return (
+    <div className="mt-2">
+      {results.map((r) => {
+        return (
+          <SearchResultItem
+            key={r.id}
+            result={r}
+            onSelectResult={onSelectResult}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+const SearchResultItem = ({
+  result,
+  onSelectResult,
+}: {
+  result: TSearchResult;
+  onSelectResult: (result: TSearchResult) => void;
+}) => {
+  return (
+    <div
+      className="my-2 flex cursor-pointer justify-between rounded-md bg-zinc-200 px-3
+    py-1 hover:bg-zinc-400"
+      onClick={() => onSelectResult(result)}
+    >
+      <div>
+        <p>{result.title}</p>
+
+        <div className="w-5/6">
+          <p className="line-clamp-2 text-sm">{result.overview}</p>
+        </div>
+      </div>
+      <Image
+        src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${result.posterPath}`}
+        alt="Poster"
+        width={50}
+        height={50}
       />
     </div>
   );
