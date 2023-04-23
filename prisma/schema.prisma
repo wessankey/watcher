@@ -9,3 +9,63 @@ datasource db {
     provider = "mysql"
     url      = env("DATABASE_URL")
 }
+
+enum MediaType {
+    MOVIE
+    TV_SHOW
+}
+
+enum Genre {
+    ACTION
+    ADVENTURE
+    ANIMATION
+    COMEDY
+    CRIME
+    DOCUMENTARY
+    DRAMA
+    FAMILY
+    FANTASY
+    HISTORY
+    HORROR
+    MUSIC
+    MYSTERY
+    ROMANCE
+    SCIENCE_FICTION
+    THRILLER
+    WAR
+    WESTERN
+}
+
+enum Status {
+    WATCHING
+    WATCHED
+    WANT_TO_WATCH
+}
+
+model MediaGenre {
+    id       Int   @id @default(autoincrement())
+    name     Genre
+    media_id Int?
+
+    Media Media? @relation(fields: [media_id], references: [id])
+}
+
+model Media {
+    id           Int          @id @default(autoincrement())
+    title        String
+    media_type   MediaType
+    last_updated DateTime     @default(now())
+    poster_path  String
+    genres       MediaGenre[]
+    UserMedia    UserMedia[]
+}
+
+model UserMedia {
+    user_id  Int
+    media_id Int
+    status   Status
+
+    Media Media @relation(fields: [media_id], references: [id])
+
+    @@unique([user_id, media_id])
+}

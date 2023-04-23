@@ -8,6 +8,9 @@ import { PlusIcon } from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Modal } from "~/components/common/Modal";
+import debounce from "lodash.debounce";
+import { api } from "~/utils/api";
 
 type TCard = {
   title: string;
@@ -29,6 +32,16 @@ const Dashboard: NextPage = () => {
    * Source: https://github.com/vercel/next.js/discussions/17443#discussioncomment-637879
    */
   const [mounted, setMounted] = useState(false);
+
+  const [showAddCardModal, setShowAddCardModal] = useState(false);
+
+  const handleAddCardClick = () => {
+    setShowAddCardModal(true);
+  };
+
+  const handleCloseAddCardModal = () => {
+    setShowAddCardModal(false);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -115,16 +128,30 @@ const Dashboard: NextPage = () => {
   };
 
   return mounted ? (
-    <DndContext onDragEnd={handleDragEnd}>
-      <div
-        className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
+    <>
+      <AddCardModal
+        isOpen={showAddCardModal}
+        onClose={handleCloseAddCardModal}
+      />
+      <DndContext onDragEnd={handleDragEnd}>
+        <div
+          className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
       via-purple-900 to-violet-700"
-      >
-        {Object.entries(laneState).map(([id, lane]) => {
-          return <Lane key={id} id={id} name={lane.name} cards={lane.cards} />;
-        })}
-      </div>
-    </DndContext>
+        >
+          {Object.entries(laneState).map(([id, lane]) => {
+            return (
+              <Lane
+                key={id}
+                id={id}
+                name={lane.name}
+                cards={lane.cards}
+                onAddCardClick={handleAddCardClick}
+              />
+            );
+          })}
+        </div>
+      </DndContext>
+    </>
   ) : null;
 };
 
@@ -132,10 +159,12 @@ const Lane = ({
   id,
   name,
   cards,
+  onAddCardClick,
 }: {
   id: string;
   name: string;
   cards: TCard[];
+  onAddCardClick: () => void;
 }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
@@ -148,8 +177,12 @@ const Lane = ({
     >
       <div className="flex items-center justify-between px-4 pt-3">
         <h3 className="text-2xl font-bold">{name}</h3>
-        <button className="justify flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-white">
+        <button
+          onClick={onAddCardClick}
+          className="justify flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-white"
+        >
           <PlusIcon height={20} />
+
           <p>Add</p>
         </button>
       </div>
@@ -188,10 +221,52 @@ const Card = ({ title, type, posterPath, genre }: TCard) => {
         <p className="text-sm">{genre}</p>
       </div>
       <Image
-        src={`${process.env.NEXT_PUBLIC_POSTER_PATH_PREFIX}${posterPath}`}
+        src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${posterPath}`}
         alt="Poster"
         width={50}
         height={50}
+      />
+    </div>
+  );
+};
+
+const AddCardModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <Modal
+      title="Add Media"
+      open={isOpen}
+      onClose={onClose}
+      body={
+        <div>
+          <MediaSearch />
+        </div>
+      }
+    ></Modal>
+  );
+};
+
+const MediaSearch = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const onUpdate = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, 500);
+
+  const { data } = api.dashboard.search.useQuery({ text: searchTerm || "" });
+
+  return (
+    <div>
+      <input
+        className="h-10 w-full rounded-md border border-gray-300 px-3"
+        type="text"
+        placeholder="Search for a movie or show"
+        onChange={onUpdate}
       />
     </div>
   );
