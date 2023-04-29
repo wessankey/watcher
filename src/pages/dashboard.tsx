@@ -238,14 +238,40 @@ const AddCardModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const [selectedResult, setSelectedResult] = useState<TSearchResult>();
+
+  const { mutate, isLoading } = api.dashboard.addMedia.useMutation({
+    onSuccess: () => {
+      console.log("success!");
+      onClose();
+    },
+    onError: (err) => {
+      console.log("error:", err);
+    },
+  });
+
+  const handleResultClick = (result: TSearchResult | undefined) => {
+    setSelectedResult(result);
+  };
+
+  const handleAdd = () => {
+    if (selectedResult) {
+      console.log("adding");
+      mutate({ id: selectedResult.id, status: "WANT_TO_WATCH" });
+    }
+  };
+
   return (
     <Modal
       title="Add Media"
       open={isOpen}
       onClose={onClose}
       body={
-        <div>
-          <MediaSearch />
+        <div className="h-full">
+          <MediaSearch
+            selectedResult={selectedResult}
+            onResultClick={handleResultClick}
+          />
         </div>
       }
       footer={
@@ -256,7 +282,12 @@ const AddCardModal = ({
           >
             Cancel
           </button>
-          <button className="rounded-md bg-blue-700 px-3 py-1 text-white">
+          <button
+            disabled={!selectedResult}
+            onClick={handleAdd}
+            className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed
+            disabled:opacity-50"
+          >
             Add
           </button>
         </div>
@@ -265,36 +296,50 @@ const AddCardModal = ({
   );
 };
 
-const MediaSearch = () => {
+const MediaSearch = ({
+  selectedResult,
+  onResultClick,
+}: {
+  selectedResult?: TSearchResult;
+  onResultClick: (result: TSearchResult | undefined) => void;
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedResult, setSelectedResult] = useState<TSearchResult>();
 
   const onUpdate = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (selectedResult) {
+      onResultClick(undefined);
+    }
+
     setSearchTerm(e.target.value);
   }, 500);
 
   const onSelectResult = (result: TSearchResult) => {
-    setSelectedResult(result);
+    onResultClick(result);
   };
 
   const { data } = api.dashboard.search.useQuery({ text: searchTerm || "" });
 
   return (
-    <div>
+    <div className="h-full overflow-auto">
       <input
         className="h-10 w-full rounded-md border border-gray-300 px-3"
         type="text"
         placeholder="Search for a movie or show"
         onChange={onUpdate}
       />
-      {selectedResult ? (
-        <SearchResultItem result={selectedResult} />
-      ) : (
-        <SearchResultList
-          results={data || []}
-          onSelectResult={onSelectResult}
-        />
-      )}
+      <div className="h-full overflow-auto">
+        {selectedResult ? (
+          <SearchResultItem
+            result={selectedResult}
+            onSelectResult={onSelectResult}
+          />
+        ) : (
+          <SearchResultList
+            results={data || []}
+            onSelectResult={onSelectResult}
+          />
+        )}
+      </div>
     </div>
   );
 };
@@ -307,7 +352,7 @@ const SearchResultList = ({
   onSelectResult: (result: TSearchResult) => void;
 }) => {
   return (
-    <div className="mt-2">
+    <div className="mt-2 h-full">
       {results.map((r) => {
         return (
           <SearchResultItem

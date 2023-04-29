@@ -15,48 +15,25 @@ enum MediaType {
     TV_SHOW
 }
 
-enum Genre {
-    ACTION
-    ADVENTURE
-    ANIMATION
-    COMEDY
-    CRIME
-    DOCUMENTARY
-    DRAMA
-    FAMILY
-    FANTASY
-    HISTORY
-    HORROR
-    MUSIC
-    MYSTERY
-    ROMANCE
-    SCIENCE_FICTION
-    THRILLER
-    WAR
-    WESTERN
-}
-
 enum Status {
     WATCHING
     WATCHED
     WANT_TO_WATCH
 }
 
-model MediaGenre {
-    id       Int   @id @default(autoincrement())
-    name     Genre
-    media_id Int?
-
-    Media Media? @relation(fields: [media_id], references: [id])
+model Genre {
+    id    Int     @id @default(autoincrement())
+    name  String  @unique
+    Media Media[]
 }
 
 model Media {
-    id           Int          @id @default(autoincrement())
+    id           Int         @id @default(autoincrement())
     title        String
     media_type   MediaType
-    last_updated DateTime     @default(now())
+    last_updated DateTime    @default(now())
     poster_path  String
-    genres       MediaGenre[]
+    genres       Genre[]
     UserMedia    UserMedia[]
 }
 
@@ -64,6 +41,7 @@ model UserMedia {
     user_id  Int
     media_id Int
     status   Status
+    order    Int
 
     Media Media @relation(fields: [media_id], references: [id])
 

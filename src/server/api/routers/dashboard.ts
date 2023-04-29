@@ -2,12 +2,24 @@ import { z } from "zod";
 import axios from "axios";
 import fs from "fs";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  privateProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
+import { Media, MediaType, Status } from "@prisma/client";
 
 export type TSearchResult = {
   id: number;
   title: string;
   overview: string;
+  posterPath: string;
+};
+
+type TMediaResult = {
+  id: number;
+  title: string;
+  genres: { id: number; name: string }[];
   posterPath: string;
 };
 
@@ -19,6 +31,13 @@ const buildSearchUrl = (text: string) => {
   return `${url}${apiSegment}${querySegment}`;
 };
 
+const buildGetMovieByIdUrl = (id: number) => {
+  const url = `${process.env.NEXT_PUBLIC_MOVIEDB_URL}/movie/${id}`;
+  const apiSegment = `?api_key=${process.env.NEXT_PUBLIC_MOVIEDB_API_KEY}`;
+
+  return `${url}${apiSegment}`;
+};
+
 const transformSearchResult = (data: any): TSearchResult[] => {
   return data.results.map((searchResult) => ({
     id: searchResult.id,
@@ -28,7 +47,7 @@ const transformSearchResult = (data: any): TSearchResult[] => {
   }));
 };
 
-function readFile(path: string) {
+function readFile(path: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     fs.readFile(path, (err, data) => {
       if (err) {
@@ -39,6 +58,27 @@ function readFile(path: string) {
     });
   });
 }
+
+const getMediaById = async (id: number): Promise<TMediaResult> => {
+  // return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
+  //   console.log("result:", res.data);
+  //   return res.data;
+  // });
+
+  const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
+
+  return readFile(mockFilePath)
+    .then((data) => JSON.parse(data.toString()))
+    .then((data) => {
+      return {
+        id: data.id,
+        title: data.title,
+        genres: data.genres,
+        last_updated: new Date(),
+        posterPath: data.poster_path,
+      };
+    });
+};
 
 export const dashboardRouter = createTRPCRouter({
   search: publicProcedure
@@ -57,5 +97,54 @@ export const dashboardRouter = createTRPCRouter({
       }
 
       return [];
+    }),
+  addMedia: publicProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        // TODO: is there a way to generate this enum programmatically?
+        status: z.enum([Status.WATCHING, Status.WANT_TO_WATCH, Status.WATCHED]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if media exists
+      let media = await ctx.prisma.media.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      // If the media doesn't exist in the DB, pull it from the API and persist it
+      if (!media) {
+        const mediaData = await getMediaById(input.id);
+
+        media = await ctx.prisma.media.create({
+          data: {
+            id: mediaData.id,
+            title: mediaData.title,
+            genres: {
+              connectOrCreate: mediaData.genres.map((genre) => ({
+                where: { id: genre.id },
+                create: { id: genre.id, name: genre.name },
+              })),
+            },
+            poster_path: mediaData.posterPath,
+            media_type: MediaType.MOVIE,
+          },
+        });
+      }
+
+      console.log("creating user media");
+      console.log("ctx.user.id:", ctx.userId);
+
+      // ctx.prisma.userMedia.create({
+      //   data: {
+      //     media_id: media.id,
+      //     user_id: 0,
+      //     order: 0,
+      //     status: input.status,
+      //   },
+      // });
+      console.log("adding id:", input.id);
     }),
 });
