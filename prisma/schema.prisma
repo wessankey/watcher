@@ -38,7 +38,7 @@ model Media {
 }
 
 model UserMedia {
-    user_id  Int
+    user_id  String
     media_id Int
     status   Status
     order    Int

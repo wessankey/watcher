@@ -98,7 +98,7 @@ export const dashboardRouter = createTRPCRouter({
 
       return [];
     }),
-  addMedia: publicProcedure
+  addMedia: privateProcedure
     .input(
       z.object({
         id: z.number(),
@@ -134,17 +134,16 @@ export const dashboardRouter = createTRPCRouter({
         });
       }
 
-      console.log("creating user media");
-      console.log("ctx.user.id:", ctx.userId);
-
-      // ctx.prisma.userMedia.create({
-      //   data: {
-      //     media_id: media.id,
-      //     user_id: 0,
-      //     order: 0,
-      //     status: input.status,
-      //   },
-      // });
-      console.log("adding id:", input.id);
+      return await ctx.prisma.userMedia.create({
+        data: {
+          media_id: media.id,
+          user_id: ctx.userId,
+          order: 0,
+          status: input.status,
+        },
+        include: {
+          Media: true,
+        },
+      });
     }),
 });

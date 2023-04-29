@@ -83,16 +83,16 @@ export const createTRPCRouter = t.router;
  */
 export const publicProcedure = t.procedure;
 
-// const enforceAuthenticated = t.middleware(async ({ ctx, next }) => {
-//   if (!ctx.userId) {
-//     throw new TRPCError({ code: "UNAUTHORIZED" });
-//   }
+const enforceAuthenticated = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
 
-//   return next({
-//     ctx: {
-//       userId: ctx.userId,
-//     },
-//   });
-// });
+  return next({
+    ctx: {
+      userId: ctx.userId,
+    },
+  });
+});
 
-// export const privateProcedure = t.procedure.use(enforceAuthenticated);
+export const privateProcedure = t.procedure.use(enforceAuthenticated);
