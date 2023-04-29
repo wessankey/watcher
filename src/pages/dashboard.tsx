@@ -22,6 +22,24 @@ type TLane = {
   cards: MediaWithGenres[];
 };
 
+const DEFAULT_STATE: Record<string, TLane> = {
+  WANT_TO_WATCH: {
+    id: "WANT_TO_WATCH",
+    name: "Want to watch",
+    cards: [],
+  },
+  WATCHING: {
+    id: "WATCHING",
+    name: "Watching",
+    cards: [],
+  },
+  WATCHED: {
+    id: "WATCHED",
+    name: "Watched",
+    cards: [],
+  },
+};
+
 const Dashboard: NextPage = () => {
   /**
    * This is required due a React hydration error. Specifically, the input element
@@ -32,23 +50,8 @@ const Dashboard: NextPage = () => {
    */
   const [mounted, setMounted] = useState(false);
 
-  const [laneState, setLaneState] = useState<Record<string, TLane>>(() => ({
-    WANT_TO_WATCH: {
-      id: "WANT_TO_WATCH",
-      name: "Want to watch",
-      cards: [],
-    },
-    WATCHING: {
-      id: "WATCHING",
-      name: "Watching",
-      cards: [],
-    },
-    WATCHED: {
-      id: "WATCHED",
-      name: "Watched",
-      cards: [],
-    },
-  }));
+  const [laneState, setLaneState] =
+    useState<Record<string, TLane>>(DEFAULT_STATE);
 
   const { data, isLoading } = api.dashboard.getMedia.useQuery();
 
@@ -68,38 +71,32 @@ const Dashboard: NextPage = () => {
 
   useEffect(() => {
     if (data) {
-      const cards: MediaWithGenres[] = data
-        .filter((r) => r.status === "WANT_TO_WATCH")
-        .map((d) => ({
-          id: d.Media.id,
-          title: d.Media.title,
-          mediaType: d.Media.mediaType,
-          lastUpdated: d.Media.lastUpdated,
-          posterPath: d.Media.posterPath,
-          genres: [],
-        }));
+      setLaneState((prev) => {
+        const updatedState = { ...prev };
 
-      const updatedState = {
-        WANT_TO_WATCH: {
-          id: "WANT_TO_WATCH",
-          name: "Want to watch",
-          cards: cards,
-        },
-        WATCHING: {
-          id: "WATCHING",
-          name: "Watching",
-          cards: [],
-        },
-        WATCHED: {
-          id: "WATCHED",
-          name: "Watched",
-          cards: [],
-        },
-      };
+        data.forEach((media) => {
+          const lane = updatedState[media.status];
 
-      setLaneState(updatedState);
+          if (lane) {
+            if (lane.cards.find((c) => c.id === media.Media.id)) return;
+            lane.cards.push({
+              id: media.Media.id,
+              title: media.Media.title,
+              mediaType: media.Media.mediaType,
+              lastUpdated: media.Media.lastUpdated,
+              posterPath: media.Media.posterPath,
+              genres: [],
+            });
+          }
+        });
+
+        return updatedState;
+      });
     }
   }, [data]);
+
+  const { mutate: changeCardStatusMutation } =
+    api.dashboard.changeCardStatus.useMutation();
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over) {
@@ -108,7 +105,7 @@ const Dashboard: NextPage = () => {
       // Get from lane and to lane
       const toLaneId = event.over.id;
       const fromLaneId = flattenedLaneState.find(
-        (card) => card.title === event.active.id
+        (card) => card.id === event.active.id
       )?.lane;
 
       if (fromLaneId === toLaneId || !fromLaneId) return;
@@ -118,14 +115,14 @@ const Dashboard: NextPage = () => {
         const toLane = prev[toLaneId];
 
         const movedCard = fromLane?.cards.find(
-          (card) => card.title === movedCardId
+          (card) => card.id === movedCardId
         );
 
         if (!fromLane || !toLane || !movedCard) return prev;
 
         const updatedToLaneCards = [...toLane.cards, movedCard];
         const updatedFromLaneCards = fromLane.cards.filter(
-          (card) => card.title !== movedCardId
+          (card) => card.id !== movedCardId
         );
 
         return {
@@ -139,6 +136,12 @@ const Dashboard: NextPage = () => {
             cards: updatedFromLaneCards,
           },
         };
+      });
+
+      changeCardStatusMutation({
+        mediaId: movedCardId as number,
+        // @ts-expect-error TODO: fix this
+        status: toLaneId,
       });
     }
   };
@@ -222,10 +225,8 @@ const Lane = ({
   );
 };
 
-const Card = ({ title, mediaType, posterPath }: MediaWithGenres) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: title,
-  });
+const Card = ({ id, title, mediaType, posterPath }: MediaWithGenres) => {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
   const style = transform
     ? {

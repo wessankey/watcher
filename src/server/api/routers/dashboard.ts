@@ -60,24 +60,29 @@ function readFile(path: string): Promise<Buffer> {
 }
 
 const getMediaById = async (id: number): Promise<TMediaResult> => {
-  // return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
-  //   console.log("result:", res.data);
-  //   return res.data;
-  // });
+  return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
+    return {
+      id: res.data.id,
+      title: res.data.title,
+      genres: res.data.genres,
+      last_updated: new Date(),
+      posterPath: res.data.poster_path,
+    };
+  });
 
-  const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
+  // const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
 
-  return readFile(mockFilePath)
-    .then((data) => JSON.parse(data.toString()))
-    .then((data) => {
-      return {
-        id: data.id,
-        title: data.title,
-        genres: data.genres,
-        last_updated: new Date(),
-        posterPath: data.poster_path,
-      };
-    });
+  // return readFile(mockFilePath)
+  //   .then((data) => JSON.parse(data.toString()))
+  //   .then((data) => {
+  //     return {
+  //       id: data.id,
+  //       title: data.title,
+  //       genres: data.genres,
+  //       last_updated: new Date(),
+  //       posterPath: data.poster_path,
+  //     };
+  //   });
 };
 
 export const dashboardRouter = createTRPCRouter({
@@ -85,15 +90,15 @@ export const dashboardRouter = createTRPCRouter({
     .input(z.object({ text: z.string() }))
     .query(async ({ input }) => {
       if (input.text) {
-        // return axios.get(buildSearchUrl(input.text)).then((res) => {
-        //   return transformSearchResult(res.data);
-        // });
-
-        const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
-
-        return readFile(mockFilePath).then((data) => {
-          return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+        return axios.get(buildSearchUrl(input.text)).then((res) => {
+          return transformSearchResult(res.data);
         });
+
+        // const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
+
+        // return readFile(mockFilePath).then((data) => {
+        //   return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+        // });
       }
 
       return [];
@@ -112,6 +117,28 @@ export const dashboardRouter = createTRPCRouter({
       },
     });
   }),
+  changeCardStatus: privateProcedure
+    .input(
+      z.object({
+        mediaId: z.number(),
+        status: z.enum([Status.WATCHING, Status.WANT_TO_WATCH, Status.WATCHED]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updated = await ctx.prisma.userMedia.update({
+        where: {
+          userId_mediaId: {
+            mediaId: input.mediaId,
+            userId: ctx.userId,
+          },
+        },
+        data: {
+          status: input.status,
+        },
+      });
+
+      return updated;
+    }),
   addMedia: privateProcedure
     .input(
       z.object({
