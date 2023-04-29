@@ -12,17 +12,15 @@ import { Modal } from "~/components/common/Modal";
 import debounce from "lodash.debounce";
 import { api } from "~/utils/api";
 import { TSearchResult } from "~/server/api/routers/dashboard";
+import { Genre, Media } from "@prisma/client";
 
-type TCard = {
-  title: string;
-  type: string;
-  posterPath: string;
-  genre: string;
+type MediaWithGenres = Media & { genres: Genre[] };
+
+type TLane = {
+  id: string;
+  name: string;
+  cards: MediaWithGenres[];
 };
-
-function hasKey<O extends Object>(obj: O, key: PropertyKey): key is keyof O {
-  return key in obj;
-}
 
 const Dashboard: NextPage = () => {
   /**
@@ -33,6 +31,26 @@ const Dashboard: NextPage = () => {
    * Source: https://github.com/vercel/next.js/discussions/17443#discussioncomment-637879
    */
   const [mounted, setMounted] = useState(false);
+
+  const [laneState, setLaneState] = useState<Record<string, TLane>>(() => ({
+    WANT_TO_WATCH: {
+      id: "WANT_TO_WATCH",
+      name: "Want to watch",
+      cards: [],
+    },
+    WATCHING: {
+      id: "WATCHING",
+      name: "Watching",
+      cards: [],
+    },
+    WATCHED: {
+      id: "WATCHED",
+      name: "Watched",
+      cards: [],
+    },
+  }));
+
+  const { data, isLoading } = api.dashboard.getMedia.useQuery();
 
   const [showAddCardModal, setShowAddCardModal] = useState(false);
 
@@ -48,41 +66,40 @@ const Dashboard: NextPage = () => {
     setMounted(true);
   }, []);
 
-  const [laneState, setLaneState] = useState({
-    "ac22cf17-c3ba-4f47-991b-1d564a8c8d73": {
-      name: "Want to Watch",
-      cards: [
-        {
-          title: "Inception",
-          type: "movie",
-          posterPath: "/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
-          genre: "action",
-        },
-        {
-          title: "Breaking Bad",
-          type: "show",
-          posterPath: "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
-          genre: "drama",
-        },
-      ],
-    },
-    "1ea5c16d-fd47-41f5-b5ab-78d9c788d25c": { name: "Watching", cards: [] },
-    "8ce42a21-1ed7-46c4-a22c-e810a55eed9a": {
-      name: "Watched",
-      cards: [
-        {
-          title: "Succession",
-          type: "show",
-          genre: "drama",
-          posterPath: "/7HW47XbkNQ5fiwQFYGWdw9gs144.jpg",
-        },
-      ],
-    },
-  });
+  useEffect(() => {
+    if (data) {
+      const cards: MediaWithGenres[] = data
+        .filter((r) => r.status === "WANT_TO_WATCH")
+        .map((d) => ({
+          id: d.Media.id,
+          title: d.Media.title,
+          mediaType: d.Media.mediaType,
+          lastUpdated: d.Media.lastUpdated,
+          posterPath: d.Media.posterPath,
+          genres: [],
+        }));
 
-  const flattenedLaneState = Object.entries(laneState).flatMap(([id, lane]) => {
-    return lane.cards.map((card) => ({ ...card, lane: id }));
-  });
+      const updatedState = {
+        WANT_TO_WATCH: {
+          id: "WANT_TO_WATCH",
+          name: "Want to watch",
+          cards: cards,
+        },
+        WATCHING: {
+          id: "WATCHING",
+          name: "Watching",
+          cards: [],
+        },
+        WATCHED: {
+          id: "WATCHED",
+          name: "Watched",
+          cards: [],
+        },
+      };
+
+      setLaneState(updatedState);
+    }
+  }, [data]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over) {
@@ -97,36 +114,44 @@ const Dashboard: NextPage = () => {
       if (fromLaneId === toLaneId || !fromLaneId) return;
 
       setLaneState((prev) => {
-        if (hasKey(prev, toLaneId) && hasKey(prev, fromLaneId)) {
-          const fromLane = prev[fromLaneId];
-          const toLane = prev[toLaneId];
+        const fromLane = prev[fromLaneId];
+        const toLane = prev[toLaneId];
 
-          const movedCard = fromLane.cards.find(
-            (card) => card.title === movedCardId
-          );
+        const movedCard = fromLane?.cards.find(
+          (card) => card.title === movedCardId
+        );
 
-          const updatedToLaneCards = [...toLane.cards, movedCard];
-          const updatedFromLaneCards = fromLane.cards.filter(
-            (card) => card.title !== movedCardId
-          );
+        if (!fromLane || !toLane || !movedCard) return prev;
 
-          return {
-            ...prev,
-            [toLaneId]: {
-              ...toLane,
-              cards: updatedToLaneCards,
-            },
-            [fromLaneId]: {
-              ...fromLane,
-              cards: updatedFromLaneCards,
-            },
-          };
-        }
+        const updatedToLaneCards = [...toLane.cards, movedCard];
+        const updatedFromLaneCards = fromLane.cards.filter(
+          (card) => card.title !== movedCardId
+        );
 
-        return prev;
+        return {
+          ...prev,
+          [toLaneId]: {
+            ...toLane,
+            cards: updatedToLaneCards,
+          },
+          [fromLaneId]: {
+            ...fromLane,
+            cards: updatedFromLaneCards,
+          },
+        };
       });
     }
   };
+
+  const flattenedLaneState = laneState
+    ? Object.entries(laneState).flatMap(([id, lane]) => {
+        return lane.cards.map((card) => ({ ...card, lane: id }));
+      })
+    : [];
+
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
 
   return mounted ? (
     <>
@@ -164,7 +189,7 @@ const Lane = ({
 }: {
   id: string;
   name: string;
-  cards: TCard[];
+  cards: MediaWithGenres[];
   onAddCardClick: () => void;
 }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
@@ -197,7 +222,7 @@ const Lane = ({
   );
 };
 
-const Card = ({ title, type, posterPath, genre }: TCard) => {
+const Card = ({ title, mediaType, posterPath }: MediaWithGenres) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: title,
   });
@@ -218,8 +243,8 @@ const Card = ({ title, type, posterPath, genre }: TCard) => {
     >
       <div>
         <p className="font-bold">{title}</p>
-        <p className="text-sm">{type}</p>
-        <p className="text-sm">{genre}</p>
+        <p className="text-sm">{mediaType}</p>
+        {/* <p className="text-sm">{genre}</p> */}
       </div>
       <Image
         src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${posterPath}`}
@@ -256,7 +281,6 @@ const AddCardModal = ({
 
   const handleAdd = () => {
     if (selectedResult) {
-      console.log("adding");
       mutate({ id: selectedResult.id, status: "WANT_TO_WATCH" });
     }
   };

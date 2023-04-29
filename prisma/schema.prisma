@@ -28,22 +28,22 @@ model Genre {
 }
 
 model Media {
-    id           Int         @id @default(autoincrement())
-    title        String
-    media_type   MediaType
-    last_updated DateTime    @default(now())
-    poster_path  String
-    genres       Genre[]
-    UserMedia    UserMedia[]
+    id          Int         @id @default(autoincrement())
+    title       String
+    mediaType   MediaType
+    lastUpdated DateTime    @default(now())
+    posterPath  String
+    genres      Genre[]
+    UserMedia   UserMedia[]
 }
 
 model UserMedia {
-    user_id  String
-    media_id Int
-    status   Status
-    order    Int
+    userId  String
+    mediaId Int
+    status  Status
+    order   Int
 
-    Media Media @relation(fields: [media_id], references: [id])
+    Media Media @relation(fields: [mediaId], references: [id])
 
-    @@unique([user_id, media_id])
+    @@unique([userId, mediaId])
 }

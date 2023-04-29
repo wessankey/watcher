@@ -98,6 +98,20 @@ export const dashboardRouter = createTRPCRouter({
 
       return [];
     }),
+  getMedia: privateProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.userMedia.findMany({
+      where: {
+        userId: ctx.userId,
+      },
+      include: {
+        Media: {
+          include: {
+            genres: true,
+          },
+        },
+      },
+    });
+  }),
   addMedia: privateProcedure
     .input(
       z.object({
@@ -128,22 +142,28 @@ export const dashboardRouter = createTRPCRouter({
                 create: { id: genre.id, name: genre.name },
               })),
             },
-            poster_path: mediaData.posterPath,
-            media_type: MediaType.MOVIE,
+            posterPath: mediaData.posterPath,
+            mediaType: MediaType.MOVIE,
           },
         });
       }
 
-      return await ctx.prisma.userMedia.create({
+      const res = await ctx.prisma.userMedia.create({
         data: {
-          media_id: media.id,
-          user_id: ctx.userId,
+          mediaId: media.id,
+          userId: ctx.userId,
           order: 0,
           status: input.status,
         },
         include: {
-          Media: true,
+          Media: {
+            include: {
+              genres: true,
+            },
+          },
         },
       });
+
+      return res;
     }),
 });
