@@ -1,5 +1,4 @@
-import { Genre, Media, UserMedia } from "@prisma/client";
-import { TLane } from "../hooks/useDashboard";
+import { Genre, Media, Status, UserMedia } from "@prisma/client";
 
 export const ActionType = {
   ADD_CARD: "ADD_CARD",
@@ -31,30 +30,70 @@ type TAction =
       data: (UserMedia & { Media: Media & { genres: Genre[] } })[];
     };
 
+export type TMedia = Pick<Media, "id" | "title" | "mediaType" | "posterPath"> &
+  Pick<UserMedia, "order" | "status"> & { genres: Genre[] };
+
+export type TLane = {
+  id: string;
+  name: string;
+  cards: TMedia[];
+};
+
+type TDashboardState = {
+  WANT_TO_WATCH: TLane;
+  WATCHING: TLane;
+  WATCHED: TLane;
+};
+
+export const DEFAULT_STATE: TDashboardState = {
+  WANT_TO_WATCH: {
+    id: Status.WANT_TO_WATCH,
+    name: "Want to watch",
+    cards: [],
+  },
+  WATCHING: {
+    id: Status.WATCHING,
+    name: "Watching",
+    cards: [],
+  },
+  WATCHED: {
+    id: Status.WATCHED,
+    name: "Watched",
+    cards: [],
+  },
+};
+
 export const reducer = (
   state: Record<string, TLane>,
   action: TAction
 ): Record<string, TLane> => {
   switch (action.type) {
     case ActionType.HYDRATE_FROM_DB: {
-      // TODO: handle deletes
-      const updatedState = { ...state };
+      const updatedState = { ...DEFAULT_STATE };
 
-      action.data.forEach((media) => {
-        const lane = updatedState[media.status];
-
-        if (lane) {
-          if (lane.cards.find((c) => c.id === media.Media.id)) return;
-          lane.cards.push({
-            id: media.Media.id,
-            title: media.Media.title,
-            mediaType: media.Media.mediaType,
-            lastUpdated: media.Media.lastUpdated,
-            posterPath: media.Media.posterPath,
-            genres: media.Media.genres,
-          });
-        }
+      const transformedData: TMedia[] = action.data.map((userMedia) => {
+        return {
+          id: userMedia.Media.id,
+          title: userMedia.Media.title,
+          mediaType: userMedia.Media.mediaType,
+          posterPath: userMedia.Media.posterPath,
+          genres: userMedia.Media.genres,
+          status: userMedia.status,
+          order: userMedia.order,
+        };
       });
+
+      updatedState.WANT_TO_WATCH.cards = transformedData.filter(
+        (c) => c.status === Status.WANT_TO_WATCH
+      );
+
+      updatedState.WATCHING.cards = transformedData.filter(
+        (c) => c.status === Status.WATCHING
+      );
+
+      updatedState.WATCHED.cards = transformedData.filter(
+        (c) => c.status === Status.WATCHED
+      );
 
       return updatedState;
     }

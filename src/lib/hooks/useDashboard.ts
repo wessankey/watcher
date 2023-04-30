@@ -1,17 +1,13 @@
-import { useEffect, useReducer, useState } from "react";
-import { api } from "~/utils/api";
-import { ActionType, reducer } from "../reducers/dashboardReducer";
-import { Media, Genre } from "@prisma/client";
 import { DragEndEvent } from "@dnd-kit/core";
+import { Genre, UserMedia } from "@prisma/client";
+import { useEffect, useReducer, useState } from "react";
 import { TSearchResult } from "~/server/api/routers/dashboard";
-
-export type MediaWithGenres = Media & { genres: Genre[] };
-
-export type TLane = {
-  id: string;
-  name: string;
-  cards: MediaWithGenres[];
-};
+import { api } from "~/utils/api";
+import {
+  ActionType,
+  DEFAULT_STATE,
+  reducer,
+} from "../reducers/dashboardReducer";
 
 const Status = {
   WANT_TO_WATCH: "WANT_TO_WATCH",
@@ -20,24 +16,6 @@ const Status = {
 } as const;
 
 export type TStatus = (typeof Status)[keyof typeof Status];
-
-const DEFAULT_STATE: Record<string, TLane> = {
-  WANT_TO_WATCH: {
-    id: Status.WANT_TO_WATCH,
-    name: "Want to watch",
-    cards: [],
-  },
-  WATCHING: {
-    id: Status.WATCHING,
-    name: "Watching",
-    cards: [],
-  },
-  WATCHED: {
-    id: Status.WATCHED,
-    name: "Watched",
-    cards: [],
-  },
-};
 
 export const useDashboard = () => {
   const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);

@@ -10,7 +10,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AddCardModal } from "~/components/dashboard/AddCardModal";
 import { GenreTag } from "~/components/dashboard/GenreTag";
-import { MediaWithGenres, useDashboard } from "~/lib/hooks/useDashboard";
+import { useDashboard } from "~/lib/hooks/useDashboard";
+import { TMedia } from "~/lib/reducers/dashboardReducer";
 
 const Dashboard: NextPage = () => {
   /**
@@ -85,7 +86,7 @@ const Lane = ({
 }: {
   id: string;
   name: string;
-  cards: MediaWithGenres[];
+  cards: TMedia[];
   onAddCardClick: () => void;
   onStartDragging: () => void;
 }) => {
