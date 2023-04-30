@@ -4,7 +4,6 @@ import { useState } from "react";
 import { TSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { Modal } from "../common/Modal";
-import { TStatus } from "~/lib/hooks/useDashboard";
 
 export const AddCardModal = ({
   isOpen,
@@ -13,7 +12,7 @@ export const AddCardModal = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (resultToAdd: TSearchResult, status: TStatus) => void;
+  onAdd: (resultToAdd: TSearchResult) => void;
 }) => {
   const [selectedResult, setSelectedResult] = useState<TSearchResult>();
 
@@ -23,7 +22,7 @@ export const AddCardModal = ({
 
   const handleAddClick = () => {
     if (selectedResult) {
-      onAdd(selectedResult, "WANT_TO_WATCH");
+      onAdd(selectedResult);
     }
   };
 

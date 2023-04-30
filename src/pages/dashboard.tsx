@@ -1,10 +1,11 @@
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import {
-  PlusIcon,
   FilmIcon,
-  TvIcon,
+  PlusIcon,
   TrashIcon,
+  TvIcon,
 } from "@heroicons/react/24/solid";
+import { Status } from "@prisma/client";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -56,18 +57,29 @@ const Dashboard: NextPage = () => {
       via-purple-900 to-violet-700"
         >
           <div className="flex h-5/6 items-center justify-center gap-20">
-            {Object.entries(dashboardState).map(([id, lane]) => {
-              return (
-                <Lane
-                  key={id}
-                  id={id}
-                  name={lane.name}
-                  cards={lane.cards}
-                  onAddCardClick={handleAddCardClick}
-                  onStartDragging={handleStartDragging}
-                />
-              );
-            })}
+            <Lane
+              status={Status.WANT_TO_WATCH}
+              name={dashboardState.WANT_TO_WATCH.name}
+              cards={dashboardState.WANT_TO_WATCH.cards}
+              onAddCardClick={handleAddCardClick}
+              onStartDragging={handleStartDragging}
+            />
+
+            <Lane
+              status={Status.WATCHING}
+              name={dashboardState.WATCHING.name}
+              cards={dashboardState.WATCHING.cards}
+              onAddCardClick={handleAddCardClick}
+              onStartDragging={handleStartDragging}
+            />
+
+            <Lane
+              status={Status.WATCHED}
+              name={dashboardState.WATCHED.name}
+              cards={dashboardState.WATCHED.cards}
+              onAddCardClick={handleAddCardClick}
+              onStartDragging={handleStartDragging}
+            />
           </div>
 
           {isDragging && <DeleteCardDropZone />}
@@ -78,19 +90,19 @@ const Dashboard: NextPage = () => {
 };
 
 const Lane = ({
-  id,
+  status,
   name,
   cards,
   onAddCardClick,
   onStartDragging,
 }: {
-  id: string;
+  status: Status;
   name: string;
   cards: TMedia[];
-  onAddCardClick: () => void;
+  onAddCardClick: (status: Status) => void;
   onStartDragging: () => void;
 }) => {
-  const { isOver, setNodeRef } = useDroppable({ id });
+  const { isOver, setNodeRef } = useDroppable({ id: status });
 
   return (
     <div
@@ -99,24 +111,24 @@ const Lane = ({
         isOver ? "bg-slate-400" : "bg-slate-100"
       } shadow-xl`}
     >
-      <div className="flex items-center justify-between px-4 pt-3">
-        <h3 className="text-2xl font-bold">{name}</h3>
-        <button
-          onClick={onAddCardClick}
-          className="justify flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-white"
-        >
-          <PlusIcon height={20} />
-
-          <p>Add</p>
-        </button>
-      </div>
-
       <div>
-        {cards.map((c) => {
-          return (
-            <Card key={c.title} {...c} onStartDragging={onStartDragging} />
-          );
-        })}
+        <div className="flex items-center justify-between px-4 pt-3">
+          <h3 className="text-2xl font-bold">{name}</h3>
+          <button
+            onClick={() => onAddCardClick(status)}
+            className="justify flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-white"
+          >
+            <PlusIcon height={20} />
+            <p>Add</p>
+          </button>
+        </div>
+        <div>
+          {cards.map((c) => {
+            return (
+              <Card key={c.title} {...c} onStartDragging={onStartDragging} />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -129,7 +141,7 @@ const Card = ({
   posterPath,
   genres,
   onStartDragging,
-}: MediaWithGenres & {
+}: TMedia & {
   onStartDragging: () => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } =

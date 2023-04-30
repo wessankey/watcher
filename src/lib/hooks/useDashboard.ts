@@ -1,5 +1,4 @@
 import { DragEndEvent } from "@dnd-kit/core";
-import { Genre, UserMedia } from "@prisma/client";
 import { useEffect, useReducer, useState } from "react";
 import { TSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
@@ -8,6 +7,7 @@ import {
   DEFAULT_STATE,
   reducer,
 } from "../reducers/dashboardReducer";
+import { Status } from "@prisma/client";
 
 const Status = {
   WANT_TO_WATCH: "WANT_TO_WATCH",
@@ -23,6 +23,9 @@ export const useDashboard = () => {
   const { data, isLoading, refetch } = api.dashboard.getMedia.useQuery();
 
   const [isDragging, setIsDragging] = useState(false);
+  const [addCardStatus, setAddCardStatus] = useState<TStatus>(
+    Status.WANT_TO_WATCH
+  );
 
   useEffect(() => {
     if (data) {
@@ -53,7 +56,8 @@ export const useDashboard = () => {
     },
   });
 
-  const handleAddCardClick = () => {
+  const handleAddCardClick = (status: Status) => {
+    setAddCardStatus(status);
     setShowAddCardModal(true);
   };
 
@@ -78,24 +82,24 @@ export const useDashboard = () => {
       }
 
       // Get from lane and to lane
-      const toLaneId = event.over.id;
-      const fromLaneId = flattenedLaneState.find(
+      const toStatus = event.over.id;
+      const fromStatus = flattenedLaneState.find(
         (card) => card.id === event.active.id
-      )?.lane;
+      )?.status;
 
-      if (fromLaneId === toLaneId || !fromLaneId) return;
+      if (fromStatus === toStatus || !fromStatus) return;
 
       dispatch({
         type: ActionType.CHANGE_CARD_STATUS,
         movedCardId: movedCardId as number,
-        fromLaneId,
-        toLaneId: toLaneId as string,
+        fromStatus,
+        toStatus: toStatus,
       });
 
       changeCardStatusMutation({
         mediaId: movedCardId as number,
         // @ts-expect-error TODO: fix this
-        status: toLaneId,
+        status: toStatus,
       });
     }
   };
@@ -114,8 +118,8 @@ export const useDashboard = () => {
     },
   });
 
-  const handleAddCard = (resultToAdd: TSearchResult, status: TStatus) => {
-    addCardMutation({ id: resultToAdd.id, status });
+  const handleAddCard = (resultToAdd: TSearchResult) => {
+    addCardMutation({ id: resultToAdd.id, status: addCardStatus });
   };
 
   return {

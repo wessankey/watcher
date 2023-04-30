@@ -19,8 +19,8 @@ type TAction =
   | {
       type: typeof ActionType.CHANGE_CARD_STATUS;
       movedCardId: number;
-      fromLaneId: string;
-      toLaneId: string;
+      fromStatus: Status;
+      toStatus: Status;
     }
   | {
       type: typeof ActionType.MOVE_CARD;
@@ -64,9 +64,9 @@ export const DEFAULT_STATE: TDashboardState = {
 };
 
 export const reducer = (
-  state: Record<string, TLane>,
+  state: TDashboardState,
   action: TAction
-): Record<string, TLane> => {
+): TDashboardState => {
   switch (action.type) {
     case ActionType.HYDRATE_FROM_DB: {
       const updatedState = { ...DEFAULT_STATE };
@@ -105,10 +105,10 @@ export const reducer = (
       };
     }
     case ActionType.CHANGE_CARD_STATUS:
-      const { movedCardId, fromLaneId, toLaneId } = action;
+      const { movedCardId, fromStatus, toStatus } = action;
 
-      const fromLane = state[fromLaneId];
-      const toLane = state[toLaneId];
+      const fromLane = state[fromStatus];
+      const toLane = state[toStatus];
       const movedCard = fromLane?.cards.find((card) => card.id === movedCardId);
 
       if (!fromLane || !toLane || !movedCard) return state;
@@ -120,11 +120,11 @@ export const reducer = (
 
       return {
         ...state,
-        [toLaneId]: {
+        [toStatus]: {
           ...toLane,
           cards: updatedToLaneCards,
         },
-        [fromLaneId]: {
+        [fromStatus]: {
           ...fromLane,
           cards: updatedFromLaneCards,
         },
