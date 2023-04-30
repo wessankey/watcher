@@ -3,14 +3,8 @@ import { PlusIcon } from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Modal } from "~/components/common/Modal";
-import { MediaSearchModal } from "~/components/dashboard/SearchModal";
-import {
-  MediaWithGenres,
-  TStatus,
-  useDashboard,
-} from "~/lib/hooks/useDashboard";
-import { TSearchResult } from "~/server/api/routers/dashboard";
+import { AddCardModal } from "~/components/dashboard/AddCardModal";
+import { MediaWithGenres, useDashboard } from "~/lib/hooks/useDashboard";
 
 const Dashboard: NextPage = () => {
   /**
@@ -139,62 +133,6 @@ const Card = ({ id, title, mediaType, posterPath }: MediaWithGenres) => {
         height={50}
       />
     </div>
-  );
-};
-
-const AddCardModal = ({
-  isOpen,
-  onClose,
-  onAdd,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (resultToAdd: TSearchResult, status: TStatus) => void;
-}) => {
-  const [selectedResult, setSelectedResult] = useState<TSearchResult>();
-
-  const handleResultClick = (result: TSearchResult | undefined) => {
-    setSelectedResult(result);
-  };
-
-  const handleAddClick = () => {
-    if (selectedResult) {
-      onAdd(selectedResult, "WANT_TO_WATCH");
-    }
-  };
-
-  return (
-    <Modal
-      title="Add Media"
-      open={isOpen}
-      onClose={onClose}
-      body={
-        <div className="h-full">
-          <MediaSearchModal
-            selectedResult={selectedResult}
-            onResultClick={handleResultClick}
-          />
-        </div>
-      }
-      footer={
-        <div className="flex justify-end gap-5">
-          <button
-            onClick={onClose}
-            className="rounded-md bg-red-700 px-3 py-1 text-white"
-          >
-            Cancel
-          </button>
-          <button
-            disabled={!selectedResult}
-            onClick={handleAddClick}
-            className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed
-            disabled:opacity-50"
-          >
-            Add
-          </button>
-        </div>
-      }
-    ></Modal>
   );
 };
 
