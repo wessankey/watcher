@@ -1,13 +1,13 @@
-import { z } from "zod";
 import axios from "axios";
 import fs from "fs";
+import { z } from "zod";
 
+import { MediaType, Status } from "@prisma/client";
 import {
   createTRPCRouter,
   privateProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { Media, MediaType, Status } from "@prisma/client";
 
 export type TSearchResult = {
   id: number;

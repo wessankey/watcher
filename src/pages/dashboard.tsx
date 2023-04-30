@@ -1,44 +1,16 @@
-import {
-  DndContext,
-  DragEndEvent,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import { PlusIcon } from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Modal } from "~/components/common/Modal";
-import debounce from "lodash.debounce";
-import { api } from "~/utils/api";
+import { MediaSearchModal } from "~/components/dashboard/SearchModal";
+import {
+  MediaWithGenres,
+  TStatus,
+  useDashboard,
+} from "~/lib/hooks/useDashboard";
 import { TSearchResult } from "~/server/api/routers/dashboard";
-import { Genre, Media } from "@prisma/client";
-
-type MediaWithGenres = Media & { genres: Genre[] };
-
-type TLane = {
-  id: string;
-  name: string;
-  cards: MediaWithGenres[];
-};
-
-const DEFAULT_STATE: Record<string, TLane> = {
-  WANT_TO_WATCH: {
-    id: "WANT_TO_WATCH",
-    name: "Want to watch",
-    cards: [],
-  },
-  WATCHING: {
-    id: "WATCHING",
-    name: "Watching",
-    cards: [],
-  },
-  WATCHED: {
-    id: "WATCHED",
-    name: "Watched",
-    cards: [],
-  },
-};
 
 const Dashboard: NextPage = () => {
   /**
@@ -50,107 +22,19 @@ const Dashboard: NextPage = () => {
    */
   const [mounted, setMounted] = useState(false);
 
-  const [laneState, setLaneState] =
-    useState<Record<string, TLane>>(DEFAULT_STATE);
-
-  const { data, isLoading } = api.dashboard.getMedia.useQuery();
-
-  const [showAddCardModal, setShowAddCardModal] = useState(false);
-
-  const handleAddCardClick = () => {
-    setShowAddCardModal(true);
-  };
-
-  const handleCloseAddCardModal = () => {
-    setShowAddCardModal(false);
-  };
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (data) {
-      setLaneState((prev) => {
-        const updatedState = { ...prev };
-
-        data.forEach((media) => {
-          const lane = updatedState[media.status];
-
-          if (lane) {
-            if (lane.cards.find((c) => c.id === media.Media.id)) return;
-            lane.cards.push({
-              id: media.Media.id,
-              title: media.Media.title,
-              mediaType: media.Media.mediaType,
-              lastUpdated: media.Media.lastUpdated,
-              posterPath: media.Media.posterPath,
-              genres: [],
-            });
-          }
-        });
-
-        return updatedState;
-      });
-    }
-  }, [data]);
-
-  const { mutate: changeCardStatusMutation } =
-    api.dashboard.changeCardStatus.useMutation();
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    if (event.over) {
-      const movedCardId = event.active.id;
-
-      // Get from lane and to lane
-      const toLaneId = event.over.id;
-      const fromLaneId = flattenedLaneState.find(
-        (card) => card.id === event.active.id
-      )?.lane;
-
-      if (fromLaneId === toLaneId || !fromLaneId) return;
-
-      setLaneState((prev) => {
-        const fromLane = prev[fromLaneId];
-        const toLane = prev[toLaneId];
-
-        const movedCard = fromLane?.cards.find(
-          (card) => card.id === movedCardId
-        );
-
-        if (!fromLane || !toLane || !movedCard) return prev;
-
-        const updatedToLaneCards = [...toLane.cards, movedCard];
-        const updatedFromLaneCards = fromLane.cards.filter(
-          (card) => card.id !== movedCardId
-        );
-
-        return {
-          ...prev,
-          [toLaneId]: {
-            ...toLane,
-            cards: updatedToLaneCards,
-          },
-          [fromLaneId]: {
-            ...fromLane,
-            cards: updatedFromLaneCards,
-          },
-        };
-      });
-
-      changeCardStatusMutation({
-        mediaId: movedCardId as number,
-        // @ts-expect-error TODO: fix this
-        status: toLaneId,
-      });
-    }
-  };
-
-  const flattenedLaneState = laneState
-    ? Object.entries(laneState).flatMap(([id, lane]) => {
-        return lane.cards.map((card) => ({ ...card, lane: id }));
-      })
-    : [];
+  const {
+    isLoading,
+    dashboardState,
+    showAddCardModal,
+    handleAddCard,
+    handleAddCardClick,
+    handleCloseAddCardModal,
+    handleDragEnd,
+  } = useDashboard();
 
   if (isLoading) {
     return <p>Loading...</p>;
@@ -161,13 +45,14 @@ const Dashboard: NextPage = () => {
       <AddCardModal
         isOpen={showAddCardModal}
         onClose={handleCloseAddCardModal}
+        onAdd={handleAddCard}
       />
       <DndContext onDragEnd={handleDragEnd}>
         <div
           className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
       via-purple-900 to-violet-700"
         >
-          {Object.entries(laneState).map(([id, lane]) => {
+          {Object.entries(dashboardState).map(([id, lane]) => {
             return (
               <Lane
                 key={id}
@@ -260,29 +145,21 @@ const Card = ({ id, title, mediaType, posterPath }: MediaWithGenres) => {
 const AddCardModal = ({
   isOpen,
   onClose,
+  onAdd,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onAdd: (resultToAdd: TSearchResult, status: TStatus) => void;
 }) => {
   const [selectedResult, setSelectedResult] = useState<TSearchResult>();
-
-  const { mutate, isLoading } = api.dashboard.addMedia.useMutation({
-    onSuccess: () => {
-      console.log("success!");
-      onClose();
-    },
-    onError: (err) => {
-      console.log("error:", err);
-    },
-  });
 
   const handleResultClick = (result: TSearchResult | undefined) => {
     setSelectedResult(result);
   };
 
-  const handleAdd = () => {
+  const handleAddClick = () => {
     if (selectedResult) {
-      mutate({ id: selectedResult.id, status: "WANT_TO_WATCH" });
+      onAdd(selectedResult, "WANT_TO_WATCH");
     }
   };
 
@@ -293,7 +170,7 @@ const AddCardModal = ({
       onClose={onClose}
       body={
         <div className="h-full">
-          <MediaSearch
+          <MediaSearchModal
             selectedResult={selectedResult}
             onResultClick={handleResultClick}
           />
@@ -309,7 +186,7 @@ const AddCardModal = ({
           </button>
           <button
             disabled={!selectedResult}
-            onClick={handleAdd}
+            onClick={handleAddClick}
             className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed
             disabled:opacity-50"
           >
@@ -318,106 +195,6 @@ const AddCardModal = ({
         </div>
       }
     ></Modal>
-  );
-};
-
-const MediaSearch = ({
-  selectedResult,
-  onResultClick,
-}: {
-  selectedResult?: TSearchResult;
-  onResultClick: (result: TSearchResult | undefined) => void;
-}) => {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const onUpdate = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedResult) {
-      onResultClick(undefined);
-    }
-
-    setSearchTerm(e.target.value);
-  }, 500);
-
-  const onSelectResult = (result: TSearchResult) => {
-    onResultClick(result);
-  };
-
-  const { data } = api.dashboard.search.useQuery({ text: searchTerm || "" });
-
-  return (
-    <div className="h-full overflow-auto">
-      <input
-        className="h-10 w-full rounded-md border border-gray-300 px-3"
-        type="text"
-        placeholder="Search for a movie or show"
-        onChange={onUpdate}
-      />
-      <div className="h-full overflow-auto">
-        {selectedResult ? (
-          <SearchResultItem
-            result={selectedResult}
-            onSelectResult={onSelectResult}
-          />
-        ) : (
-          <SearchResultList
-            results={data || []}
-            onSelectResult={onSelectResult}
-          />
-        )}
-      </div>
-    </div>
-  );
-};
-
-const SearchResultList = ({
-  results,
-  onSelectResult,
-}: {
-  results: TSearchResult[];
-  onSelectResult: (result: TSearchResult) => void;
-}) => {
-  return (
-    <div className="mt-2 h-full">
-      {results.map((r) => {
-        return (
-          <SearchResultItem
-            key={r.id}
-            result={r}
-            onSelectResult={onSelectResult}
-          />
-        );
-      })}
-    </div>
-  );
-};
-
-const SearchResultItem = ({
-  result,
-  onSelectResult,
-}: {
-  result: TSearchResult;
-  onSelectResult: (result: TSearchResult) => void;
-}) => {
-  return (
-    <div
-      className="my-2 flex cursor-pointer justify-between rounded-md bg-zinc-200 px-3
-    py-1 hover:bg-zinc-400"
-      onClick={() => onSelectResult(result)}
-    >
-      <div>
-        <p>{result.title}</p>
-
-        <div className="w-5/6">
-          <p className="line-clamp-2 text-sm">{result.overview}</p>
-        </div>
-      </div>
-      <Image
-        src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${result.posterPath}`}
-        alt="Poster"
-        width={50}
-        height={50}
-      />
-    </div>
   );
 };
 
