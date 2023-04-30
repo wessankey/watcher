@@ -139,6 +139,22 @@ export const dashboardRouter = createTRPCRouter({
 
       return updated;
     }),
+
+  deleteMedia: privateProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.userMedia.delete({
+        where: {
+          userId_mediaId: {
+            mediaId: input.id,
+            userId: ctx.userId,
+          },
+        },
+      });
+
+      return true;
+    }),
+
   addMedia: privateProcedure
     .input(
       z.object({

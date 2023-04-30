@@ -1,5 +1,10 @@
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
-import { PlusIcon, FilmIcon, TvIcon } from "@heroicons/react/24/solid";
+import {
+  PlusIcon,
+  FilmIcon,
+  TvIcon,
+  TrashIcon,
+} from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -23,8 +28,10 @@ const Dashboard: NextPage = () => {
 
   const {
     isLoading,
+    isDragging,
     dashboardState,
     showAddCardModal,
+    handleStartDragging,
     handleAddCard,
     handleAddCardClick,
     handleCloseAddCardModal,
@@ -44,20 +51,25 @@ const Dashboard: NextPage = () => {
       />
       <DndContext onDragEnd={handleDragEnd}>
         <div
-          className="flex h-screen w-screen items-center justify-center gap-20 bg-gradient-to-br from-gray-900
+          className=" flex h-screen w-screen flex-col items-center bg-gradient-to-br from-gray-900
       via-purple-900 to-violet-700"
         >
-          {Object.entries(dashboardState).map(([id, lane]) => {
-            return (
-              <Lane
-                key={id}
-                id={id}
-                name={lane.name}
-                cards={lane.cards}
-                onAddCardClick={handleAddCardClick}
-              />
-            );
-          })}
+          <div className="flex h-5/6 items-center justify-center gap-20">
+            {Object.entries(dashboardState).map(([id, lane]) => {
+              return (
+                <Lane
+                  key={id}
+                  id={id}
+                  name={lane.name}
+                  cards={lane.cards}
+                  onAddCardClick={handleAddCardClick}
+                  onStartDragging={handleStartDragging}
+                />
+              );
+            })}
+          </div>
+
+          {isDragging && <DeleteCardDropZone />}
         </div>
       </DndContext>
     </>
@@ -69,11 +81,13 @@ const Lane = ({
   name,
   cards,
   onAddCardClick,
+  onStartDragging,
 }: {
   id: string;
   name: string;
   cards: MediaWithGenres[];
   onAddCardClick: () => void;
+  onStartDragging: () => void;
 }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
@@ -98,7 +112,9 @@ const Lane = ({
 
       <div>
         {cards.map((c) => {
-          return <Card key={c.title} {...c} />;
+          return (
+            <Card key={c.title} {...c} onStartDragging={onStartDragging} />
+          );
         })}
       </div>
     </div>
@@ -111,8 +127,18 @@ const Card = ({
   mediaType,
   posterPath,
   genres,
-}: MediaWithGenres) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
+  onStartDragging,
+}: MediaWithGenres & {
+  onStartDragging: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({ id });
+
+  useEffect(() => {
+    if (isDragging) {
+      onStartDragging();
+    }
+  }, [isDragging]);
 
   const style = transform
     ? {
@@ -150,6 +176,22 @@ const Card = ({
         width={50}
         height={50}
       />
+    </div>
+  );
+};
+
+const DeleteCardDropZone = () => {
+  const { isOver, setNodeRef } = useDroppable({ id: "DELETE_CARD_DROP_ZONE" });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex h-28 w-1/2 flex-col items-center justify-center rounded-xl ${
+        isOver ? "bg-red-300" : "bg-red-400"
+      }`}
+    >
+      <TrashIcon className="fill-white" height={30} />
+      <p className="mt-3 text-white">Drag here to remove</p>
     </div>
   );
 };

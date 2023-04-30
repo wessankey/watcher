@@ -15,6 +15,7 @@ type TAction =
     }
   | {
       type: typeof ActionType.REMOVE_CARD;
+      cardId: number;
     }
   | {
       type: typeof ActionType.CHANGE_CARD_STATUS;
@@ -36,6 +37,7 @@ export const reducer = (
 ): Record<string, TLane> => {
   switch (action.type) {
     case ActionType.HYDRATE_FROM_DB: {
+      // TODO: handle deletes
       const updatedState = { ...state };
 
       action.data.forEach((media) => {
@@ -58,8 +60,11 @@ export const reducer = (
     }
     case ActionType.ADD_CARD:
       return state;
-    case ActionType.REMOVE_CARD:
-      return state;
+    case ActionType.REMOVE_CARD: {
+      return {
+        ...state,
+      };
+    }
     case ActionType.CHANGE_CARD_STATUS:
       const { movedCardId, fromLaneId, toLaneId } = action;
 

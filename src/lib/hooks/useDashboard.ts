@@ -44,6 +44,8 @@ export const useDashboard = () => {
 
   const { data, isLoading, refetch } = api.dashboard.getMedia.useQuery();
 
+  const [isDragging, setIsDragging] = useState(false);
+
   useEffect(() => {
     if (data) {
       dispatch({ type: ActionType.HYDRATE_FROM_DB, data });
@@ -58,12 +60,20 @@ export const useDashboard = () => {
 
   const [showAddCardModal, setShowAddCardModal] = useState(false);
 
+  // TODO: remove refetch
   const { mutate: changeCardStatusMutation } =
     api.dashboard.changeCardStatus.useMutation({
       onSuccess: () => {
         refetch();
       },
     });
+
+  // TODO: remove refetch
+  const { mutate: deleteCardMutation } = api.dashboard.deleteMedia.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
 
   const handleAddCardClick = () => {
     setShowAddCardModal(true);
@@ -73,9 +83,21 @@ export const useDashboard = () => {
     setShowAddCardModal(false);
   };
 
+  const deleteCard = (id: number) => {
+    deleteCardMutation({ id });
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over) {
+      setIsDragging(false);
+
       const movedCardId = event.active.id;
+
+      // Check if card was deleted
+      if (event.over.id === "DELETE_CARD_DROP_ZONE") {
+        deleteCard(movedCardId as number);
+        return;
+      }
 
       // Get from lane and to lane
       const toLaneId = event.over.id;
@@ -100,6 +122,10 @@ export const useDashboard = () => {
     }
   };
 
+  const handleStartDragging = () => {
+    setIsDragging(true);
+  };
+
   const { mutate: addCardMutation } = api.dashboard.addMedia.useMutation({
     onSuccess: () => {
       refetch();
@@ -116,8 +142,10 @@ export const useDashboard = () => {
 
   return {
     isLoading,
+    isDragging,
     dashboardState,
     showAddCardModal,
+    handleStartDragging,
     handleAddCard,
     handleAddCardClick,
     handleCloseAddCardModal,
