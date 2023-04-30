@@ -49,7 +49,7 @@ export const reducer = (
             mediaType: media.Media.mediaType,
             lastUpdated: media.Media.lastUpdated,
             posterPath: media.Media.posterPath,
-            genres: [],
+            genres: media.Media.genres,
           });
         }
       });

@@ -42,8 +42,6 @@ const DEFAULT_STATE: Record<string, TLane> = {
 export const useDashboard = () => {
   const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);
 
-  const [selectedResult, setSelectedResult] = useState<TSearchResult>();
-
   const { data, isLoading, refetch } = api.dashboard.getMedia.useQuery();
 
   useEffect(() => {

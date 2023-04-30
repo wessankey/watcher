@@ -1,9 +1,10 @@
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
-import { PlusIcon } from "@heroicons/react/24/solid";
+import { PlusIcon, FilmIcon, TvIcon } from "@heroicons/react/24/solid";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AddCardModal } from "~/components/dashboard/AddCardModal";
+import { GenreTag } from "~/components/dashboard/GenreTag";
 import { MediaWithGenres, useDashboard } from "~/lib/hooks/useDashboard";
 
 const Dashboard: NextPage = () => {
@@ -104,7 +105,13 @@ const Lane = ({
   );
 };
 
-const Card = ({ id, title, mediaType, posterPath }: MediaWithGenres) => {
+const Card = ({
+  id,
+  title,
+  mediaType,
+  posterPath,
+  genres,
+}: MediaWithGenres) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
   const style = transform
@@ -121,10 +128,21 @@ const Card = ({ id, title, mediaType, posterPath }: MediaWithGenres) => {
       {...attributes}
       className="m-3 flex justify-between rounded-md bg-zinc-700 p-2 text-zinc-200 shadow-md"
     >
-      <div>
-        <p className="font-bold">{title}</p>
-        <p className="text-sm">{mediaType}</p>
-        {/* <p className="text-sm">{genre}</p> */}
+      <div className="flex flex-col justify-between">
+        <div className="flex items-center gap-2">
+          {mediaType === "MOVIE" ? (
+            <FilmIcon height={20} />
+          ) : (
+            <TvIcon height={20} />
+          )}
+          <p className="font-bold">{title}</p>
+        </div>
+
+        <div className="flex gap-1">
+          {genres.slice(0, 2).map((genre) => {
+            return <GenreTag name={genre.name} color={genre.tagColor} />;
+          })}
+        </div>
       </div>
       <Image
         src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${posterPath}`}

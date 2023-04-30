@@ -166,7 +166,7 @@ export const dashboardRouter = createTRPCRouter({
             genres: {
               connectOrCreate: mediaData.genres.map((genre) => ({
                 where: { id: genre.id },
-                create: { id: genre.id, name: genre.name },
+                create: { id: genre.id, name: genre.name, tagColor: "orange" },
               })),
             },
             posterPath: mediaData.posterPath,
