@@ -45,17 +45,15 @@ const Dashboard: NextPage = () => {
   }
 
   return mounted ? (
-    <>
+    <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
+      <h1 className="pl-5 pt-5 text-4xl font-bold text-white">🍿Watcher</h1>
       <AddCardModal
         isOpen={showAddCardModal}
         onClose={handleCloseAddCardModal}
         onAdd={handleAddCard}
       />
       <DndContext onDragEnd={handleDragEnd}>
-        <div
-          className=" flex h-screen w-screen flex-col items-center bg-gradient-to-br from-gray-900
-      via-purple-900 to-violet-700"
-        >
+        <div className=" flex h-screen w-screen flex-col items-center">
           <div className="flex h-5/6 items-center justify-center gap-20">
             <Lane
               status={Status.WANT_TO_WATCH}
@@ -85,7 +83,7 @@ const Dashboard: NextPage = () => {
           {isDragging && <DeleteCardDropZone />}
         </div>
       </DndContext>
-    </>
+    </div>
   ) : null;
 };
 
