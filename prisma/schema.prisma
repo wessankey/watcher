@@ -22,10 +22,9 @@ enum Status {
 }
 
 model Genre {
-    id       Int     @id @default(autoincrement())
-    name     String  @unique
-    tagColor String
-    Media    Media[]
+    id    Int     @id @default(autoincrement())
+    name  String  @unique
+    Media Media[]
 }
 
 model Media {

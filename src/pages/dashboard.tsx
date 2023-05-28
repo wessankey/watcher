@@ -45,16 +45,16 @@ const Dashboard: NextPage = () => {
   }
 
   return mounted ? (
-    <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
-      <h1 className="pl-5 pt-5 text-4xl font-bold text-white">🍿Watcher</h1>
+    <div className="flex h-screen flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
+      <h1 className="pl-5 pt-8 text-4xl font-bold text-white">🍿Watcher</h1>
       <AddCardModal
         isOpen={showAddCardModal}
         onClose={handleCloseAddCardModal}
         onAdd={handleAddCard}
       />
       <DndContext onDragEnd={handleDragEnd}>
-        <div className=" flex h-screen w-screen flex-col items-center">
-          <div className="flex h-5/6 items-center justify-center gap-20">
+        <div className="flex h-full w-screen flex-col items-center pt-8">
+          <div className="flex h-5/6 items-center justify-center gap-20 pb-8">
             <Lane
               status={Status.WANT_TO_WATCH}
               name={dashboardState.WANT_TO_WATCH.name}
@@ -105,21 +105,24 @@ const Lane = ({
   return (
     <div
       ref={setNodeRef}
-      className={`h-3/4 w-72 rounded-md ${
+      className={`h-full w-72 rounded-md ${
         isOver ? "bg-slate-400" : "bg-slate-100"
       } shadow-xl`}
     >
       <div>
-        <div className="flex items-center justify-between px-4 pt-3">
+        <div className="mx-4 mt-3">
           <h3 className="text-2xl font-bold">{name}</h3>
+
           <button
             onClick={() => onAddCardClick(status)}
-            className="justify flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-white"
+            className="justify mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-1
+             text-white hover:bg-blue-400"
           >
             <PlusIcon height={20} />
             <p>Add</p>
           </button>
         </div>
+
         <div>
           {cards.map((c) => {
             return (
@@ -177,7 +180,7 @@ const Card = ({
 
         <div className="flex gap-1">
           {genres.slice(0, 2).map((genre) => {
-            return <GenreTag name={genre.name} color={genre.tagColor} />;
+            return <GenreTag key={genre.id} name={genre.name} />;
           })}
         </div>
       </div>

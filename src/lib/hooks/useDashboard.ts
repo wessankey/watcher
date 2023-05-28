@@ -9,12 +9,6 @@ import {
 } from "../reducers/dashboardReducer";
 import { Status } from "@prisma/client";
 
-const Status = {
-  WANT_TO_WATCH: "WANT_TO_WATCH",
-  WATCHING: "WATCHING",
-  WATCHED: "WATCHED",
-} as const;
-
 export type TStatus = (typeof Status)[keyof typeof Status];
 
 export const useDashboard = () => {

@@ -23,12 +23,13 @@ export const AddCardModal = ({
   const handleAddClick = () => {
     if (selectedResult) {
       onAdd(selectedResult);
+      setSelectedResult(undefined);
     }
   };
 
   return (
     <Modal
-      title="Add Media"
+      title="Add a Movie 🎬"
       open={isOpen}
       onClose={onClose}
       body={
@@ -42,7 +43,10 @@ export const AddCardModal = ({
       footer={
         <div className="flex justify-end gap-5">
           <button
-            onClick={onClose}
+            onClick={() => {
+              setSelectedResult(undefined);
+              onClose();
+            }}
             className="rounded-md bg-red-700 px-3 py-1 text-white"
           >
             Cancel
@@ -87,9 +91,9 @@ const MediaSearch = ({
   return (
     <div className="h-full overflow-auto">
       <input
-        className="h-10 w-full rounded-md border border-gray-300 px-3"
+        className="h-10 w-full rounded-md border border-gray-300 px-3 shadow-sm"
         type="text"
-        placeholder="Search for a movie or show"
+        placeholder="Search for a movie"
         onChange={onUpdate}
       />
       <div className="h-full overflow-auto">
@@ -138,6 +142,7 @@ const SearchResultItem = ({
   result: TSearchResult;
   onSelectResult: (result: TSearchResult) => void;
 }) => {
+  console.log("poster:", result.posterPath);
   return (
     <div
       className="my-2 flex cursor-pointer justify-between rounded-md bg-zinc-200 px-3
@@ -151,12 +156,14 @@ const SearchResultItem = ({
           <p className="line-clamp-2 text-sm">{result.overview}</p>
         </div>
       </div>
-      <Image
-        src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${result.posterPath}`}
-        alt="Poster"
-        width={50}
-        height={50}
-      />
+      {result.posterPath && (
+        <Image
+          src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${result.posterPath}`}
+          alt="Poster"
+          width={50}
+          height={50}
+        />
+      )}
     </div>
   );
 };

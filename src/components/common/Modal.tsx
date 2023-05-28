@@ -20,11 +20,11 @@ export const Modal = ({
     <>
       <div className="fixed bottom-0 left-0 right-0 top-0 z-30 h-full w-full bg-[#000]/[.45]">
         <div
-          className="mh-[15rem] fixed left-1/2 top-1/2 z-40 h-[34rem] w-[40rem] translate-x-[-50%] 
+          className="mh-[15rem] fixed left-1/2 top-1/2 z-40 h-[35rem] w-[40rem] translate-x-[-50%] 
           translate-y-[-50%] rounded-md bg-[#fff] shadow-lg"
         >
-          <div className="flex h-[3rem] justify-between border-b border-[#DDD] p-5">
-            <h2 className="text-xl">{title}</h2>
+          <div className="flex h-[4rem] justify-between border-b border-[#DDD] p-5">
+            <h2 className="text-xl font-medium">{title}</h2>
             <XMarkIcon
               className="h-5 w-5 cursor-pointer stroke-[#999]"
               onClick={onClose}
