@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { Modal } from "../common/Modal";
+import { Spinner } from "flowbite-react";
 
 export const AddCardModal = ({
   isOpen,
@@ -86,16 +87,25 @@ const MediaSearch = ({
     onResultClick(result);
   };
 
-  const { data } = api.dashboard.search.useQuery({ text: searchTerm || "" });
+  const { data, isLoading } = api.dashboard.search.useQuery({
+    text: searchTerm || "",
+  });
 
   return (
     <div className="h-full overflow-auto">
       <input
-        className="h-10 w-full rounded-md border border-gray-300 px-3 shadow-sm"
+        className="h-10 w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
         type="text"
         placeholder="Search for a movie"
         onChange={onUpdate}
       />
+
+      {isLoading && (
+        <div className="flex h-full items-center justify-center">
+          <Spinner aria-label="Purple spinner example" color="purple" />
+        </div>
+      )}
+
       <div className="h-full overflow-auto">
         {selectedResult ? (
           <SearchResultItem
@@ -142,7 +152,6 @@ const SearchResultItem = ({
   result: TSearchResult;
   onSelectResult: (result: TSearchResult) => void;
 }) => {
-  console.log("poster:", result.posterPath);
   return (
     <div
       className="my-2 flex cursor-pointer justify-between rounded-md bg-zinc-200 px-3
@@ -161,7 +170,8 @@ const SearchResultItem = ({
           src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${result.posterPath}`}
           alt="Poster"
           width={50}
-          height={50}
+          height="0"
+          style={{ height: "auto" }}
         />
       )}
     </div>

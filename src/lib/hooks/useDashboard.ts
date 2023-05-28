@@ -1,30 +1,85 @@
 import { DragEndEvent } from "@dnd-kit/core";
-import { useEffect, useReducer, useState } from "react";
+import { useMemo, useState } from "react";
 import { TSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
-import {
-  ActionType,
-  DEFAULT_STATE,
-  reducer,
-} from "../reducers/dashboardReducer";
-import { Status } from "@prisma/client";
+
+import { Genre, Media, Status, UserMedia } from "@prisma/client";
+
+export type TMedia = Pick<Media, "id" | "title" | "mediaType" | "posterPath"> &
+  Pick<UserMedia, "order" | "status"> & { genres: Genre[] };
+
+export type TLane = {
+  id: string;
+  name: string;
+  cards: TMedia[];
+};
+
+type TDashboardState = {
+  WANT_TO_WATCH: TLane;
+  WATCHING: TLane;
+  WATCHED: TLane;
+};
+
+export const DEFAULT_STATE: TDashboardState = {
+  WANT_TO_WATCH: {
+    id: Status.WANT_TO_WATCH,
+    name: "Want to watch",
+    cards: [],
+  },
+  WATCHING: {
+    id: Status.WATCHING,
+    name: "Watching",
+    cards: [],
+  },
+  WATCHED: {
+    id: Status.WATCHED,
+    name: "Watched",
+    cards: [],
+  },
+};
 
 export type TStatus = (typeof Status)[keyof typeof Status];
 
 export const useDashboard = () => {
-  const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data, isLoading, refetch } = api.dashboard.getMedia.useQuery();
+  const { data, refetch } = api.dashboard.getMedia.useQuery();
 
   const [isDragging, setIsDragging] = useState(false);
   const [addCardStatus, setAddCardStatus] = useState<TStatus>(
     Status.WANT_TO_WATCH
   );
 
-  useEffect(() => {
-    if (data) {
-      dispatch({ type: ActionType.HYDRATE_FROM_DB, data });
-    }
+  const dashboardState = useMemo(() => {
+    if (!data) return DEFAULT_STATE;
+
+    const updatedState = { ...DEFAULT_STATE };
+
+    const transformedData: TMedia[] = data.map((userMedia) => {
+      return {
+        id: userMedia.Media.id,
+        title: userMedia.Media.title,
+        mediaType: userMedia.Media.mediaType,
+        posterPath: userMedia.Media.posterPath,
+        genres: userMedia.Media.genres,
+        status: userMedia.status,
+        order: userMedia.order,
+      };
+    });
+
+    updatedState.WANT_TO_WATCH.cards = transformedData.filter(
+      (c) => c.status === Status.WANT_TO_WATCH
+    );
+
+    updatedState.WATCHING.cards = transformedData.filter(
+      (c) => c.status === Status.WATCHING
+    );
+
+    updatedState.WATCHED.cards = transformedData.filter(
+      (c) => c.status === Status.WATCHED
+    );
+
+    return updatedState;
   }, [data]);
 
   const flattenedLaneState = dashboardState
@@ -35,18 +90,16 @@ export const useDashboard = () => {
 
   const [showAddCardModal, setShowAddCardModal] = useState(false);
 
-  // TODO: remove refetch
   const { mutate: changeCardStatusMutation } =
     api.dashboard.changeCardStatus.useMutation({
       onSuccess: () => {
-        refetch();
+        refetch().then(() => setIsLoading(false));
       },
     });
 
-  // TODO: remove refetch
   const { mutate: deleteCardMutation } = api.dashboard.deleteMedia.useMutation({
     onSuccess: () => {
-      refetch();
+      refetch().then(() => setIsLoading(false));
     },
   });
 
@@ -59,23 +112,12 @@ export const useDashboard = () => {
     setShowAddCardModal(false);
   };
 
-  const deleteCard = (id: number) => {
-    deleteCardMutation({ id });
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over) {
       setIsDragging(false);
 
       const movedCardId = event.active.id;
 
-      // Check if card was deleted
-      if (event.over.id === "DELETE_CARD_DROP_ZONE") {
-        deleteCard(movedCardId as number);
-        return;
-      }
-
-      // Get from lane and to lane
       const toStatus = event.over.id;
       const fromStatus = flattenedLaneState.find(
         (card) => card.id === event.active.id
@@ -83,18 +125,17 @@ export const useDashboard = () => {
 
       if (fromStatus === toStatus || !fromStatus) return;
 
-      dispatch({
-        type: ActionType.CHANGE_CARD_STATUS,
-        movedCardId: movedCardId as number,
-        fromStatus,
-        toStatus: toStatus,
-      });
+      setIsLoading(true);
 
-      changeCardStatusMutation({
-        mediaId: movedCardId as number,
-        // @ts-expect-error TODO: fix this
-        status: toStatus,
-      });
+      if (event.over.id === "DELETE_CARD_DROP_ZONE") {
+        deleteCardMutation({ id: movedCardId as number });
+      } else {
+        changeCardStatusMutation({
+          mediaId: movedCardId as number,
+          // @ts-expect-error TODO: fix this
+          status: toStatus,
+        });
+      }
     }
   };
 

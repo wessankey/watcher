@@ -6,13 +6,13 @@ import {
   TvIcon,
 } from "@heroicons/react/24/solid";
 import { Status } from "@prisma/client";
+import { Spinner } from "flowbite-react";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AddCardModal } from "~/components/dashboard/AddCardModal";
 import { GenreTag } from "~/components/dashboard/GenreTag";
-import { useDashboard } from "~/lib/hooks/useDashboard";
-import { TMedia } from "~/lib/reducers/dashboardReducer";
+import { TMedia, useDashboard } from "~/lib/hooks/useDashboard";
 
 const Dashboard: NextPage = () => {
   /**
@@ -40,10 +40,6 @@ const Dashboard: NextPage = () => {
     handleDragEnd,
   } = useDashboard();
 
-  if (isLoading) {
-    return <p>Loading...</p>;
-  }
-
   return mounted ? (
     <div className="flex h-screen flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
       <h1 className="pl-5 pt-8 text-4xl font-bold text-white">🍿Watcher</h1>
@@ -61,6 +57,7 @@ const Dashboard: NextPage = () => {
               cards={dashboardState.WANT_TO_WATCH.cards}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
+              isLoading={isLoading}
             />
 
             <Lane
@@ -69,6 +66,7 @@ const Dashboard: NextPage = () => {
               cards={dashboardState.WATCHING.cards}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
+              isLoading={isLoading}
             />
 
             <Lane
@@ -77,6 +75,7 @@ const Dashboard: NextPage = () => {
               cards={dashboardState.WATCHED.cards}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
+              isLoading={isLoading}
             />
           </div>
 
@@ -91,12 +90,14 @@ const Lane = ({
   status,
   name,
   cards,
+  isLoading,
   onAddCardClick,
   onStartDragging,
 }: {
   status: Status;
   name: string;
   cards: TMedia[];
+  isLoading: boolean;
   onAddCardClick: (status: Status) => void;
   onStartDragging: () => void;
 }) => {
@@ -109,7 +110,7 @@ const Lane = ({
         isOver ? "bg-slate-400" : "bg-slate-100"
       } shadow-xl`}
     >
-      <div>
+      <div className="h-full">
         <div className="mx-4 mt-3">
           <h3 className="text-2xl font-bold">{name}</h3>
 
@@ -123,13 +124,19 @@ const Lane = ({
           </button>
         </div>
 
-        <div>
-          {cards.map((c) => {
-            return (
-              <Card key={c.title} {...c} onStartDragging={onStartDragging} />
-            );
-          })}
-        </div>
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <Spinner />
+          </div>
+        ) : (
+          <div>
+            {cards.map((c) => {
+              return (
+                <Card key={c.title} {...c} onStartDragging={onStartDragging} />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

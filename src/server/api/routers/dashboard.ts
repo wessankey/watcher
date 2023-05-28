@@ -39,6 +39,7 @@ const buildGetMovieByIdUrl = (id: number) => {
 };
 
 const transformSearchResult = (data: any): TSearchResult[] => {
+  // @ts-ignore
   return data.results.map((searchResult) => ({
     id: searchResult.id,
     title: searchResult.title,
@@ -60,29 +61,29 @@ function readFile(path: string): Promise<Buffer> {
 }
 
 const getMediaById = async (id: number): Promise<TMediaResult> => {
-  return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
-    return {
-      id: res.data.id,
-      title: res.data.title,
-      genres: res.data.genres,
-      last_updated: new Date(),
-      posterPath: res.data.poster_path,
-    };
-  });
+  // return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
+  //   return {
+  //     id: res.data.id,
+  //     title: res.data.title,
+  //     genres: res.data.genres,
+  //     last_updated: new Date(),
+  //     posterPath: res.data.poster_path,
+  //   };
+  // });
 
-  // const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
+  const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
 
-  // return readFile(mockFilePath)
-  //   .then((data) => JSON.parse(data.toString()))
-  //   .then((data) => {
-  //     return {
-  //       id: data.id,
-  //       title: data.title,
-  //       genres: data.genres,
-  //       last_updated: new Date(),
-  //       posterPath: data.poster_path,
-  //     };
-  //   });
+  return readFile(mockFilePath)
+    .then((data) => JSON.parse(data.toString()))
+    .then((data) => {
+      return {
+        id: data.id,
+        title: data.title,
+        genres: data.genres,
+        last_updated: new Date(),
+        posterPath: data.poster_path,
+      };
+    });
 };
 
 export const dashboardRouter = createTRPCRouter({
@@ -90,15 +91,15 @@ export const dashboardRouter = createTRPCRouter({
     .input(z.object({ text: z.string() }))
     .query(async ({ input }) => {
       if (input.text) {
-        return axios.get(buildSearchUrl(input.text)).then((res) => {
-          return transformSearchResult(res.data);
-        });
-
-        // const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
-
-        // return readFile(mockFilePath).then((data) => {
-        //   return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+        // return axios.get(buildSearchUrl(input.text)).then((res) => {
+        //   return transformSearchResult(res.data);
         // });
+
+        const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
+
+        return readFile(mockFilePath).then((data) => {
+          return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+        });
       }
 
       return [];
