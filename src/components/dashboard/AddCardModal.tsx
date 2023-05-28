@@ -93,12 +93,14 @@ const MediaSearch = ({
 
   return (
     <div className="h-full overflow-auto">
-      <input
-        className="h-10 w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
-        type="text"
-        placeholder="Search for a movie"
-        onChange={onUpdate}
-      />
+      <div className="sticky top-0 h-12 w-full bg-white">
+        <input
+          className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
+          type="text"
+          placeholder="Search for a movie"
+          onChange={onUpdate}
+        />
+      </div>
 
       {isLoading && (
         <div className="flex h-full items-center justify-center">
@@ -106,7 +108,7 @@ const MediaSearch = ({
         </div>
       )}
 
-      <div className="h-full overflow-auto">
+      <div className="h-full ">
         {selectedResult ? (
           <SearchResultItem
             result={selectedResult}
