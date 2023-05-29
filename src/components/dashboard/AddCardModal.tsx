@@ -1,10 +1,10 @@
 import debounce from "lodash.debounce";
 import Image from "next/image";
 import { useState } from "react";
-import { TSearchResult } from "~/server/api/routers/dashboard";
+import { TMovieSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { Modal } from "../common/Modal";
-import { Spinner } from "flowbite-react";
+import { MovieDetail } from "./MovieDetail";
 
 export const AddCardModal = ({
   isOpen,
@@ -13,11 +13,11 @@ export const AddCardModal = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (resultToAdd: TSearchResult) => void;
+  onAdd: (resultToAdd: TMovieSearchResult) => void;
 }) => {
-  const [selectedResult, setSelectedResult] = useState<TSearchResult>();
+  const [selectedResult, setSelectedResult] = useState<TMovieSearchResult>();
 
-  const handleResultClick = (result: TSearchResult | undefined) => {
+  const handleResultClick = (result: TMovieSearchResult | undefined) => {
     setSelectedResult(result);
   };
 
@@ -32,7 +32,10 @@ export const AddCardModal = ({
     <Modal
       title="Add a Movie 🎬"
       open={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        setSelectedResult(undefined);
+        onClose();
+      }}
       body={
         <div className="h-full">
           <MediaSearch
@@ -70,8 +73,8 @@ const MediaSearch = ({
   selectedResult,
   onResultClick,
 }: {
-  selectedResult?: TSearchResult;
-  onResultClick: (result: TSearchResult | undefined) => void;
+  selectedResult?: TMovieSearchResult;
+  onResultClick: (result: TMovieSearchResult | undefined) => void;
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -83,37 +86,30 @@ const MediaSearch = ({
     setSearchTerm(e.target.value);
   }, 500);
 
-  const onSelectResult = (result: TSearchResult) => {
+  const onSelectResult = (result: TMovieSearchResult) => {
     onResultClick(result);
   };
 
-  const { data, isLoading } = api.dashboard.search.useQuery({
+  const { data } = api.dashboard.search.useQuery({
     text: searchTerm || "",
   });
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="sticky top-0 h-12 w-full bg-white">
-        <input
-          className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
-          type="text"
-          placeholder="Search for a movie"
-          onChange={onUpdate}
-        />
-      </div>
-
-      {isLoading && (
-        <div className="flex h-full items-center justify-center">
-          <Spinner aria-label="Purple spinner example" color="purple" />
+    <div className="flex h-full flex-col">
+      {!selectedResult && (
+        <div className="h-12 w-full">
+          <input
+            className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
+            type="text"
+            placeholder="Search for a movie"
+            onChange={onUpdate}
+          />
         </div>
       )}
 
-      <div className="h-full ">
+      <div className="flex-1 overflow-auto">
         {selectedResult ? (
-          <SearchResultItem
-            result={selectedResult}
-            onSelectResult={onSelectResult}
-          />
+          <MovieDetail id={selectedResult.id} />
         ) : (
           <SearchResultList
             results={data || []}
@@ -129,11 +125,11 @@ const SearchResultList = ({
   results,
   onSelectResult,
 }: {
-  results: TSearchResult[];
-  onSelectResult: (result: TSearchResult) => void;
+  results: TMovieSearchResult[];
+  onSelectResult: (result: TMovieSearchResult) => void;
 }) => {
   return (
-    <div className="mt-2 h-full">
+    <div className="py-1">
       {results.map((r) => {
         return (
           <SearchResultItem
@@ -151,8 +147,8 @@ const SearchResultItem = ({
   result,
   onSelectResult,
 }: {
-  result: TSearchResult;
-  onSelectResult: (result: TSearchResult) => void;
+  result: TMovieSearchResult;
+  onSelectResult: (result: TMovieSearchResult) => void;
 }) => {
   return (
     <div
@@ -164,12 +160,12 @@ const SearchResultItem = ({
         <p>{result.title}</p>
 
         <div className="w-5/6">
-          <p className="line-clamp-2 text-sm">{result.overview}</p>
+          <p className="text-sm line-clamp-2">{result.overview}</p>
         </div>
       </div>
       {result.posterPath && (
         <Image
-          src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${result.posterPath}`}
+          src={`${process.env.NEXT_PUBLIC_MOVIEDB_IMAGE_PREFIX}${result.posterPath}`}
           alt="Poster"
           width={50}
           height="0"

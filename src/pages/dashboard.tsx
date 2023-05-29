@@ -1,4 +1,11 @@
-import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import {
   FilmIcon,
   PlusIcon,
@@ -12,6 +19,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AddCardModal } from "~/components/dashboard/AddCardModal";
 import { GenreTag } from "~/components/dashboard/GenreTag";
+import { MovieDetailModal } from "~/components/dashboard/MovieDetailModal";
 import { TMedia, useDashboard } from "~/lib/hooks/useDashboard";
 
 const Dashboard: NextPage = () => {
@@ -40,6 +48,17 @@ const Dashboard: NextPage = () => {
     handleDragEnd,
   } = useDashboard();
 
+  const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
+
+  const selectMovie = (id: number) => setSelectedMovieId(id);
+  const closeMovieDetailModal = () => setSelectedMovieId(undefined);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 4 },
+    })
+  );
+
   return mounted ? (
     <div className="flex h-screen flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
       <h1 className="pl-5 pt-8 text-4xl font-bold text-white">🍿Watcher</h1>
@@ -48,13 +67,19 @@ const Dashboard: NextPage = () => {
         onClose={handleCloseAddCardModal}
         onAdd={handleAddCard}
       />
-      <DndContext onDragEnd={handleDragEnd}>
+      <MovieDetailModal
+        id={selectedMovieId}
+        isOpen={!!selectedMovieId}
+        onClose={closeMovieDetailModal}
+      />
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="flex h-full w-screen flex-col items-center pt-8">
           <div className="flex h-5/6 items-center justify-center gap-20 pb-8">
             <Lane
               status={Status.WANT_TO_WATCH}
               name={dashboardState.WANT_TO_WATCH.name}
               cards={dashboardState.WANT_TO_WATCH.cards}
+              selectMovie={selectMovie}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -64,6 +89,7 @@ const Dashboard: NextPage = () => {
               status={Status.WATCHING}
               name={dashboardState.WATCHING.name}
               cards={dashboardState.WATCHING.cards}
+              selectMovie={selectMovie}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -73,6 +99,7 @@ const Dashboard: NextPage = () => {
               status={Status.WATCHED}
               name={dashboardState.WATCHED.name}
               cards={dashboardState.WATCHED.cards}
+              selectMovie={selectMovie}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -91,6 +118,7 @@ const Lane = ({
   name,
   cards,
   isLoading,
+  selectMovie,
   onAddCardClick,
   onStartDragging,
 }: {
@@ -98,6 +126,7 @@ const Lane = ({
   name: string;
   cards: TMedia[];
   isLoading: boolean;
+  selectMovie: (id: number) => void;
   onAddCardClick: (status: Status) => void;
   onStartDragging: () => void;
 }) => {
@@ -132,7 +161,12 @@ const Lane = ({
           <div>
             {cards.map((c) => {
               return (
-                <Card key={c.title} {...c} onStartDragging={onStartDragging} />
+                <Card
+                  key={c.title}
+                  {...c}
+                  onStartDragging={onStartDragging}
+                  onClick={selectMovie}
+                />
               );
             })}
           </div>
@@ -148,8 +182,10 @@ const Card = ({
   mediaType,
   posterPath,
   genres,
+  onClick,
   onStartDragging,
 }: TMedia & {
+  onClick: (id: number) => void;
   onStartDragging: () => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -169,34 +205,40 @@ const Card = ({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className="m-3 flex justify-between rounded-md bg-zinc-700 p-2 text-zinc-200 shadow-md"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(id);
+      }}
     >
-      <div className="flex flex-col justify-between">
-        <div className="flex items-center gap-2">
-          {mediaType === "MOVIE" ? (
-            <FilmIcon height={20} />
-          ) : (
-            <TvIcon height={20} />
-          )}
-          <p className="font-bold">{title}</p>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        className="m-3 flex justify-between rounded-md bg-zinc-700 p-2 text-zinc-200 shadow-md"
+      >
+        <div className="flex flex-col justify-between">
+          <div className="flex items-center gap-2">
+            {mediaType === "MOVIE" ? (
+              <FilmIcon height={20} />
+            ) : (
+              <TvIcon height={20} />
+            )}
+            <p className="font-bold">{title}</p>
+          </div>
+          <div className="flex gap-1">
+            {genres.slice(0, 2).map((genre) => {
+              return <GenreTag key={genre.id} name={genre.name} />;
+            })}
+          </div>
         </div>
-
-        <div className="flex gap-1">
-          {genres.slice(0, 2).map((genre) => {
-            return <GenreTag key={genre.id} name={genre.name} />;
-          })}
-        </div>
+        <Image
+          src={`${process.env.NEXT_PUBLIC_MOVIEDB_IMAGE_PREFIX}${posterPath}`}
+          alt="Poster"
+          width={50}
+          height={50}
+        />
       </div>
-      <Image
-        src={`${process.env.NEXT_PUBLIC_MOVIEDB_POSTER_PATH_PREFIX}${posterPath}`}
-        alt="Poster"
-        width={50}
-        height={50}
-      />
     </div>
   );
 };

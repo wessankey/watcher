@@ -1,6 +1,6 @@
 import { DragEndEvent } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
-import { TSearchResult } from "~/server/api/routers/dashboard";
+import { TMovieSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 
 import { Genre, Media, Status, UserMedia } from "@prisma/client";
@@ -153,7 +153,7 @@ export const useDashboard = () => {
     },
   });
 
-  const handleAddCard = (resultToAdd: TSearchResult) => {
+  const handleAddCard = (resultToAdd: TMovieSearchResult) => {
     addCardMutation({ id: resultToAdd.id, status: addCardStatus });
   };
 
