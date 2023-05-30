@@ -28,9 +28,9 @@ const config = {
         fixStyle: "inline-type-imports",
       },
     ],
-    "@typescriptno-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-    "@typescriptno-unsafe-member-access": "off",
-    "@typescriptno-unsafe-assignment": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
   },
 };
 
