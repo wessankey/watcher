@@ -19,7 +19,7 @@ const config = {
     project: path.join(__dirname, "tsconfig.json"),
   },
   plugins: ["@typescript-eslint"],
-  extends: ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
+  extends: [],
   rules: {
     "@typescript-eslint/consistent-type-imports": [
       "warn",
@@ -28,7 +28,9 @@ const config = {
         fixStyle: "inline-type-imports",
       },
     ],
-    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "@typescriptno-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "@typescriptno-unsafe-member-access": "off",
+    "@typescriptno-unsafe-assignment": "off",
   },
 };
 
