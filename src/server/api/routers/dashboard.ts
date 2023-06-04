@@ -63,7 +63,6 @@ const getMedia = privateProcedure.query(async ({ ctx }) => {
 });
 
 const transformSearchResult = (data: any): TMovieSearchResult[] => {
-  // @ts-ignore
   return data.results.map((searchResult) => ({
     id: searchResult.id,
     title: searchResult.title,

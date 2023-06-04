@@ -1,7 +1,7 @@
 import debounce from "lodash.debounce";
 import Image from "next/image";
 import { useState } from "react";
-import { TMovieSearchResult } from "~/server/api/routers/dashboard";
+import type { TMovieSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { Modal } from "../common/Modal";
 import { MovieDetail } from "./MovieDetail";

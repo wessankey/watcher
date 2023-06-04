@@ -1,6 +1,6 @@
 import { DragEndEvent } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
-import { TMovieSearchResult } from "~/server/api/routers/dashboard";
+import type { TMovieSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 
 import { Genre, Media, Status, UserMedia } from "@prisma/client";
