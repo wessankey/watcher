@@ -63,7 +63,7 @@ const getMedia = privateProcedure.query(async ({ ctx }) => {
 });
 
 const transformSearchResult = (data: any): TMovie[] => {
-  return data.results.map((searchResult) => ({
+  return data.results.map((searchResult: any) => ({
     id: searchResult.id,
     title: searchResult.title,
     genres: "",
@@ -217,7 +217,7 @@ const search = privateProcedure
       //   return transformSearchResult(res.data);
       // });
 
-      const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
+      const mockFilePath = `${process.env.PWD}/src/mock/tv-search.json`;
 
       return readFile(mockFilePath).then((data) => {
         return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
