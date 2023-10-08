@@ -22,6 +22,14 @@ import { GenreTag } from "~/components/dashboard/GenreTag";
 import { MovieDetailModal } from "~/components/dashboard/MovieDetailModal";
 import { useDashboard } from "~/common/hooks/useDashboard";
 import { TMedia } from "~/common/types";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "../components/ui/dropdown-menu";
 
 const Dashboard: NextPage = () => {
   /**
@@ -144,14 +152,21 @@ const Lane = ({
         <div className="mx-4 mt-3">
           <h3 className="text-2xl font-bold">{name}</h3>
 
-          <button
-            onClick={() => onAddCardClick(status)}
-            className="justify mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-1
-             text-white hover:bg-blue-400"
-          >
-            <PlusIcon height={20} />
-            <p>Add</p>
-          </button>
+          {/* <button onClick={() => onAddCardClick(status)}></button> */}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="justify mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-1
+               text-white hover:bg-blue-400"
+            >
+              <PlusIcon height={20} />
+              <p>Add</p>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full">
+              <DropdownMenuItem>Movie</DropdownMenuItem>
+              <DropdownMenuItem>TV Show</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {isLoading ? (
