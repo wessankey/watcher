@@ -40,6 +40,7 @@ type TAction =
       type: typeof ActionType.DELETE_MOVIE;
       payload: {
         movieId: number;
+        fromStatus: Status;
       };
     }
   | {
@@ -104,7 +105,13 @@ export const reducer = (
       });
     }
     case ActionType.DELETE_MOVIE: {
-      return state;
+      const { movieId, fromStatus } = action.payload;
+
+      return produce(state, (draft) => {
+        draft[fromStatus].cards = draft[fromStatus].cards.filter(
+          (c) => c.id !== movieId
+        );
+      });
     }
   }
 };

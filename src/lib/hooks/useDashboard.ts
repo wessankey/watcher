@@ -70,9 +70,6 @@ export const useDashboard = () => {
 
   const { mutate: changeCardStatusMutation } =
     api.dashboard.changeCardStatus.useMutation({
-      // onSuccess: () => {
-      //   refetch().then(() => setIsLoading(false));
-      // },
       onMutate: async (payload) => {
         if (!payload) return;
 
@@ -98,8 +95,26 @@ export const useDashboard = () => {
     });
 
   const { mutate: deleteCardMutation } = api.dashboard.deleteMedia.useMutation({
-    onSuccess: () => {
-      refetch().then(() => setIsLoading(false));
+    onMutate: async (payload) => {
+      if (!payload) return;
+
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      utils.dashboard.getMedia.cancel();
+
+      // Snapshot previous value
+      const previousState = utils.dashboard.getMedia.getData();
+
+      // Optimistically update the data with the move
+      dispatch({
+        type: "DELETE_MOVIE",
+        payload: {
+          movieId: payload.id,
+          fromStatus: payload.fromStatus,
+        },
+      });
+
+      // Return previous data so we can revert if there was an error
+      return { previousState };
     },
   });
 
@@ -136,7 +151,7 @@ export const useDashboard = () => {
       if (fromStatus === toStatus || !fromStatus) return;
 
       if (event.over.id === "DELETE_CARD_DROP_ZONE") {
-        deleteCardMutation({ id: mediaId });
+        deleteCardMutation({ id: mediaId, fromStatus });
       } else {
         changeCardStatusMutation({ mediaId, fromStatus, toStatus });
       }

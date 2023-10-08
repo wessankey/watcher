@@ -160,7 +160,7 @@ const Lane = ({
             {cards.map((c) => {
               return (
                 <Card
-                  key={c.title}
+                  key={c.id}
                   {...c}
                   onStartDragging={onStartDragging}
                   onClick={selectMovie}

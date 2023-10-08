@@ -186,7 +186,16 @@ const changeCardStatus = privateProcedure
   });
 
 const deleteMedia = privateProcedure
-  .input(z.object({ id: z.number() }))
+  .input(
+    z.object({
+      id: z.number(),
+      fromStatus: z.enum([
+        Status.WATCHING,
+        Status.WANT_TO_WATCH,
+        Status.WATCHED,
+      ]),
+    })
+  )
   .mutation(async ({ ctx, input }) => {
     await ctx.prisma.userMedia.delete({
       where: {
