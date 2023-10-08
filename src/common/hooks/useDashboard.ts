@@ -5,9 +5,7 @@ import { api } from "~/utils/api";
 
 import { Genre, Media, Status, UserMedia } from "@prisma/client";
 import { ActionType, reducer } from "../reducers/dashboardReducer";
-
-export type TMedia = Pick<Media, "id" | "title" | "mediaType" | "posterPath"> &
-  Pick<UserMedia, "order" | "status"> & { genres: Genre[] };
+import { TMedia } from "../types";
 
 export type TLane = {
   id: string;
@@ -43,6 +41,7 @@ export type TStatus = (typeof Status)[keyof typeof Status];
 
 export const useDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [addCardLoading, setAddCardLoading] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
   const [isDragging, setIsDragging] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
@@ -120,11 +119,13 @@ export const useDashboard = () => {
 
   const { mutate: addCardMutation } = api.dashboard.addMedia.useMutation({
     onSuccess: () => {
+      console.log("first onSuccess");
+      setAddCardLoading(false);
       refetch();
       handleCloseAddCardModal();
     },
     onError: (err) => {
-      console.log("error:", err);
+      console.log("Error adding media:", err);
     },
   });
 
@@ -162,8 +163,15 @@ export const useDashboard = () => {
     setIsDragging(true);
   };
 
-  const handleAddCard = (resultToAdd: TMovieSearchResult) => {
-    addCardMutation({ id: resultToAdd.id, status: addCardStatus });
+  const handleAddCard = (
+    resultToAdd: TMovieSearchResult,
+    cleanup?: () => void
+  ) => {
+    setAddCardLoading(true);
+    addCardMutation(
+      { id: resultToAdd.id, status: addCardStatus },
+      { onSuccess: () => cleanup && cleanup() }
+    );
   };
 
   const handleSelectMovie = (id: number) => setSelectedMovieId(id);
@@ -172,6 +180,7 @@ export const useDashboard = () => {
 
   return {
     isLoading,
+    addCardLoading,
     isDragging,
     dashboardState,
     showAddCardModal,

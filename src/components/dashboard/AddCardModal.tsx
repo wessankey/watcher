@@ -6,20 +6,28 @@ import type {
   TMovieSearchResult,
 } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
+import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Modal } from "../common/Modal";
 import { MovieDetail } from "./MovieDetail";
 
 export const AddCardModal = ({
   isOpen,
+  addCardLoading,
   onClose,
   onAdd,
 }: {
   isOpen: boolean;
+  addCardLoading: boolean;
   onClose: () => void;
-  onAdd: (resultToAdd: TMovieSearchResult) => void;
+  onAdd: (resultToAdd: TMovieSearchResult, cleanup: () => void) => void;
 }) => {
-  const [selectedResult, setSelectedResult] = useState<TMovie>();
+  const [selectedResult, setSelectedResult] = useState<TMovie | undefined>();
   const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
+
+  const resetState = () => {
+    setSelectedResult(undefined);
+    setSelectedMovieId(undefined);
+  };
 
   const query = api.dashboard.findMovieById.useQuery(
     {
@@ -37,8 +45,7 @@ export const AddCardModal = ({
 
   const handleAddClick = () => {
     if (selectedResult) {
-      onAdd(selectedResult);
-      setSelectedResult(undefined);
+      onAdd(selectedResult, resetState);
     }
   };
 
@@ -47,7 +54,7 @@ export const AddCardModal = ({
       title="Add a Movie 🎬"
       open={isOpen}
       onClose={() => {
-        setSelectedResult(undefined);
+        resetState();
         onClose();
       }}
       body={
@@ -62,7 +69,7 @@ export const AddCardModal = ({
         <div className="flex justify-end gap-5">
           <button
             onClick={() => {
-              setSelectedResult(undefined);
+              resetState();
               onClose();
             }}
             className="rounded-md bg-red-700 px-3 py-1 text-white"
@@ -74,7 +81,7 @@ export const AddCardModal = ({
             onClick={handleAddClick}
             className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Add
+            {addCardLoading ? <LoadingSpinner /> : <span>Add</span>}
           </button>
         </div>
       }
@@ -109,27 +116,26 @@ const MediaSearch = ({
 
   return (
     <div className="flex h-full flex-col">
-      {!selectedResult && (
-        <div className="h-12 w-full">
-          <input
-            className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
-            type="text"
-            placeholder="Search for a movie"
-            onChange={onUpdate}
-          />
+      {selectedResult ? (
+        <MovieDetail data={selectedResult} />
+      ) : (
+        <div className="overflow-auto">
+          <div className="h-12 w-full">
+            <input
+              className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
+              type="text"
+              placeholder="Search for a movie"
+              onChange={onUpdate}
+            />
+          </div>
+          <div className="flex-1 overflow-auto">
+            <SearchResultList
+              results={data || []}
+              onSelectResult={onSelectResult}
+            />
+          </div>
         </div>
       )}
-
-      <div className="flex-1 overflow-auto">
-        {selectedResult ? (
-          <MovieDetail data={selectedResult} />
-        ) : (
-          <SearchResultList
-            results={data || []}
-            onSelectResult={onSelectResult}
-          />
-        )}
-      </div>
     </div>
   );
 };

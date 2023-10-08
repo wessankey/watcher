@@ -20,7 +20,8 @@ import { useEffect, useState } from "react";
 import { AddCardModal } from "~/components/dashboard/AddCardModal";
 import { GenreTag } from "~/components/dashboard/GenreTag";
 import { MovieDetailModal } from "~/components/dashboard/MovieDetailModal";
-import { TMedia, useDashboard } from "~/lib/hooks/useDashboard";
+import { useDashboard } from "~/common/hooks/useDashboard";
+import { TMedia } from "~/common/types";
 
 const Dashboard: NextPage = () => {
   /**
@@ -38,6 +39,7 @@ const Dashboard: NextPage = () => {
 
   const {
     isLoading,
+    addCardLoading,
     isDragging,
     dashboardState,
     showAddCardModal,
@@ -62,6 +64,7 @@ const Dashboard: NextPage = () => {
       <h1 className="pl-5 pt-8 text-4xl font-bold text-white">🍿Watcher</h1>
       <AddCardModal
         isOpen={showAddCardModal}
+        addCardLoading={addCardLoading}
         onClose={handleCloseAddCardModal}
         onAdd={handleAddCard}
       />
