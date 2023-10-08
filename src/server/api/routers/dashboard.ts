@@ -161,7 +161,12 @@ const changeCardStatus = privateProcedure
   .input(
     z.object({
       mediaId: z.number(),
-      status: z.enum([Status.WATCHING, Status.WANT_TO_WATCH, Status.WATCHED]),
+      fromStatus: z.enum([
+        Status.WATCHING,
+        Status.WANT_TO_WATCH,
+        Status.WATCHED,
+      ]),
+      toStatus: z.enum([Status.WATCHING, Status.WANT_TO_WATCH, Status.WATCHED]),
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -173,7 +178,7 @@ const changeCardStatus = privateProcedure
         },
       },
       data: {
-        status: input.status,
+        status: input.toStatus,
       },
     });
 

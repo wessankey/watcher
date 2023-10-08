@@ -41,17 +41,15 @@ const Dashboard: NextPage = () => {
     isDragging,
     dashboardState,
     showAddCardModal,
+    selectedMovieId,
+    handleCloseMovieDetailModal,
+    handleSelectMovie,
     handleStartDragging,
     handleAddCard,
     handleAddCardClick,
     handleCloseAddCardModal,
     handleDragEnd,
   } = useDashboard();
-
-  const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
-
-  const selectMovie = (id: number) => setSelectedMovieId(id);
-  const closeMovieDetailModal = () => setSelectedMovieId(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -70,7 +68,7 @@ const Dashboard: NextPage = () => {
       <MovieDetailModal
         id={selectedMovieId}
         isOpen={!!selectedMovieId}
-        onClose={closeMovieDetailModal}
+        onClose={handleCloseMovieDetailModal}
       />
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="flex h-full w-screen flex-col items-center pt-8">
@@ -79,7 +77,7 @@ const Dashboard: NextPage = () => {
               status={Status.WANT_TO_WATCH}
               name={dashboardState.WANT_TO_WATCH.name}
               cards={dashboardState.WANT_TO_WATCH.cards}
-              selectMovie={selectMovie}
+              selectMovie={handleSelectMovie}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -89,7 +87,7 @@ const Dashboard: NextPage = () => {
               status={Status.WATCHING}
               name={dashboardState.WATCHING.name}
               cards={dashboardState.WATCHING.cards}
-              selectMovie={selectMovie}
+              selectMovie={handleSelectMovie}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -99,7 +97,7 @@ const Dashboard: NextPage = () => {
               status={Status.WATCHED}
               name={dashboardState.WATCHED.name}
               cards={dashboardState.WATCHED.cards}
-              selectMovie={selectMovie}
+              selectMovie={handleSelectMovie}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}

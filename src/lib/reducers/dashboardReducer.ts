@@ -91,7 +91,17 @@ export const reducer = (
       return state;
     }
     case ActionType.MOVE_MOVIE: {
-      return state;
+      const { movieId, fromStatus, toStatus } = action.payload;
+
+      return produce(state, (draft) => {
+        const cardToMove = draft[fromStatus].cards.find(
+          (c) => c.id === movieId
+        );
+        draft[fromStatus].cards = draft[fromStatus].cards.filter(
+          (c) => c.id !== movieId
+        );
+        draft[toStatus].cards = [...draft[toStatus].cards, cardToMove];
+      });
     }
     case ActionType.DELETE_MOVIE: {
       return state;

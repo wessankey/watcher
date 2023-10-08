@@ -43,6 +43,14 @@ export type TStatus = (typeof Status)[keyof typeof Status];
 
 export const useDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
+  const [isDragging, setIsDragging] = useState(false);
+  const [showAddCardModal, setShowAddCardModal] = useState(false);
+  const [addCardStatus, setAddCardStatus] = useState<TStatus>(
+    Status.WANT_TO_WATCH
+  );
+
+  const utils = api.useContext();
 
   const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);
 
@@ -54,29 +62,54 @@ export const useDashboard = () => {
     }
   }, [data]);
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [addCardStatus, setAddCardStatus] = useState<TStatus>(
-    Status.WANT_TO_WATCH
-  );
-
   const flattenedLaneState = dashboardState
     ? Object.entries(dashboardState).flatMap(([id, lane]) => {
         return lane.cards.map((card) => ({ ...card, lane: id }));
       })
     : [];
 
-  const [showAddCardModal, setShowAddCardModal] = useState(false);
-
   const { mutate: changeCardStatusMutation } =
     api.dashboard.changeCardStatus.useMutation({
-      onSuccess: () => {
-        refetch().then(() => setIsLoading(false));
+      // onSuccess: () => {
+      //   refetch().then(() => setIsLoading(false));
+      // },
+      onMutate: async (payload) => {
+        if (!payload) return;
+
+        // Cancel outgoing refetches so they don't overwrite optimistic update
+        utils.dashboard.getMedia.cancel();
+
+        // Snapshot previous value
+        const previousState = utils.dashboard.getMedia.getData();
+
+        // Optimistically update the data with the move
+        dispatch({
+          type: "MOVE_MOVIE",
+          payload: {
+            fromStatus: payload.fromStatus,
+            toStatus: payload.toStatus,
+            movieId: payload.mediaId,
+          },
+        });
+
+        // Return previous data so we can revert if there was an error
+        return { previousState };
       },
     });
 
   const { mutate: deleteCardMutation } = api.dashboard.deleteMedia.useMutation({
     onSuccess: () => {
       refetch().then(() => setIsLoading(false));
+    },
+  });
+
+  const { mutate: addCardMutation } = api.dashboard.addMedia.useMutation({
+    onSuccess: () => {
+      refetch();
+      handleCloseAddCardModal();
+    },
+    onError: (err) => {
+      console.log("error:", err);
     },
   });
 
@@ -93,25 +126,19 @@ export const useDashboard = () => {
     if (event.over) {
       setIsDragging(false);
 
-      const movedCardId = event.active.id;
+      const mediaId = event.active.id as number;
 
-      const toStatus = event.over.id;
+      const toStatus = event.over.id as Status;
       const fromStatus = flattenedLaneState.find(
         (card) => card.id === event.active.id
       )?.status;
 
       if (fromStatus === toStatus || !fromStatus) return;
 
-      setIsLoading(true);
-
       if (event.over.id === "DELETE_CARD_DROP_ZONE") {
-        deleteCardMutation({ id: movedCardId as number });
+        deleteCardMutation({ id: mediaId });
       } else {
-        changeCardStatusMutation({
-          mediaId: movedCardId as number,
-          // @ts-expect-error TODO: fix this
-          status: toStatus,
-        });
+        changeCardStatusMutation({ mediaId, fromStatus, toStatus });
       }
     }
   };
@@ -120,25 +147,22 @@ export const useDashboard = () => {
     setIsDragging(true);
   };
 
-  const { mutate: addCardMutation } = api.dashboard.addMedia.useMutation({
-    onSuccess: () => {
-      refetch();
-      handleCloseAddCardModal();
-    },
-    onError: (err) => {
-      console.log("error:", err);
-    },
-  });
-
   const handleAddCard = (resultToAdd: TMovieSearchResult) => {
     addCardMutation({ id: resultToAdd.id, status: addCardStatus });
   };
+
+  const handleSelectMovie = (id: number) => setSelectedMovieId(id);
+
+  const handleCloseMovieDetailModal = () => setSelectedMovieId(undefined);
 
   return {
     isLoading,
     isDragging,
     dashboardState,
     showAddCardModal,
+    selectedMovieId,
+    handleCloseMovieDetailModal,
+    handleSelectMovie,
     handleStartDragging,
     handleAddCard,
     handleAddCardClick,
