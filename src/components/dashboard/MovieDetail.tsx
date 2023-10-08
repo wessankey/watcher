@@ -1,10 +1,8 @@
-import { api } from "~/utils/api";
 import Image from "next/image";
 import { GenreTag } from "./GenreTag";
+import { TMovie } from "~/server/api/routers/dashboard";
 
-export const MovieDetail = ({ id }: { id: number }) => {
-  const { data } = api.dashboard.findMovieById.useQuery({ movieId: id });
-
+export const MovieDetail = ({ data }: { data: TMovie }) => {
   return (
     <div className="flex w-full flex-col rounded-md border border-zinc-200 bg-zinc-100 p-3 shadow-lg">
       <h3 className="text-xl font-medium tracking-wide">{data?.title}</h3>

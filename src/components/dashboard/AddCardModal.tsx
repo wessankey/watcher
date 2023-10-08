@@ -1,7 +1,10 @@
 import debounce from "lodash.debounce";
 import Image from "next/image";
 import { useState } from "react";
-import type { TMovieSearchResult } from "~/server/api/routers/dashboard";
+import type {
+  TMovie,
+  TMovieSearchResult,
+} from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { Modal } from "../common/Modal";
 import { MovieDetail } from "./MovieDetail";
@@ -15,10 +18,21 @@ export const AddCardModal = ({
   onClose: () => void;
   onAdd: (resultToAdd: TMovieSearchResult) => void;
 }) => {
-  const [selectedResult, setSelectedResult] = useState<TMovieSearchResult>();
+  const [selectedResult, setSelectedResult] = useState<TMovie>();
+  const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
+
+  const query = api.dashboard.findMovieById.useQuery(
+    {
+      movieId: selectedMovieId,
+    },
+    {
+      enabled: !!selectedMovieId,
+      onSuccess: (data) => setSelectedResult(data),
+    }
+  );
 
   const handleResultClick = (result: TMovieSearchResult | undefined) => {
-    setSelectedResult(result);
+    setSelectedMovieId(result.id);
   };
 
   const handleAddClick = () => {
@@ -58,8 +72,7 @@ export const AddCardModal = ({
           <button
             disabled={!selectedResult}
             onClick={handleAddClick}
-            className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed
-            disabled:opacity-50"
+            className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Add
           </button>
@@ -73,7 +86,7 @@ const MediaSearch = ({
   selectedResult,
   onResultClick,
 }: {
-  selectedResult?: TMovieSearchResult;
+  selectedResult?: TMovie;
   onResultClick: (result: TMovieSearchResult | undefined) => void;
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -109,7 +122,7 @@ const MediaSearch = ({
 
       <div className="flex-1 overflow-auto">
         {selectedResult ? (
-          <MovieDetail id={selectedResult.id} />
+          <MovieDetail data={selectedResult} />
         ) : (
           <SearchResultList
             results={data || []}

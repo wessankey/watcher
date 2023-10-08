@@ -1,9 +1,10 @@
 import { DragEndEvent } from "@dnd-kit/core";
-import { useMemo, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import type { TMovieSearchResult } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 
 import { Genre, Media, Status, UserMedia } from "@prisma/client";
+import { ActionType, reducer } from "../reducers/dashboardReducer";
 
 export type TMedia = Pick<Media, "id" | "title" | "mediaType" | "posterPath"> &
   Pick<UserMedia, "order" | "status"> & { genres: Genre[] };
@@ -43,44 +44,20 @@ export type TStatus = (typeof Status)[keyof typeof Status];
 export const useDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
 
+  const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);
+
   const { data, refetch } = api.dashboard.getMedia.useQuery();
+
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: ActionType.HYDRATE_FROM_DB, payload: { data } });
+    }
+  }, [data]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [addCardStatus, setAddCardStatus] = useState<TStatus>(
     Status.WANT_TO_WATCH
   );
-
-  const dashboardState = useMemo(() => {
-    if (!data) return DEFAULT_STATE;
-
-    const updatedState = { ...DEFAULT_STATE };
-
-    const transformedData: TMedia[] = data.map((userMedia) => {
-      return {
-        id: userMedia.Media.id,
-        title: userMedia.Media.title,
-        mediaType: userMedia.Media.mediaType,
-        posterPath: userMedia.Media.posterPath,
-        genres: userMedia.Media.genres,
-        status: userMedia.status,
-        order: userMedia.order,
-      };
-    });
-
-    updatedState.WANT_TO_WATCH.cards = transformedData.filter(
-      (c) => c.status === Status.WANT_TO_WATCH
-    );
-
-    updatedState.WATCHING.cards = transformedData.filter(
-      (c) => c.status === Status.WATCHING
-    );
-
-    updatedState.WATCHED.cards = transformedData.filter(
-      (c) => c.status === Status.WATCHED
-    );
-
-    return updatedState;
-  }, [data]);
 
   const flattenedLaneState = dashboardState
     ? Object.entries(dashboardState).flatMap(([id, lane]) => {

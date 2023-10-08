@@ -4,6 +4,11 @@ import { z } from "zod";
 import { MediaType, Status } from "@prisma/client";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 
+type TWatchProvider = {
+  name: string;
+  logoPath: string;
+};
+
 export type TMovieSearchResult = {
   id: number;
   title: string;
@@ -11,12 +16,7 @@ export type TMovieSearchResult = {
   posterPath: string;
 };
 
-type TWatchProvider = {
-  name: string;
-  logoPath: string;
-};
-
-type TMovie = {
+export type TMovie = {
   id: number;
   title: string;
   genres: { id: number; name: string }[];
@@ -62,12 +62,16 @@ const getMedia = privateProcedure.query(async ({ ctx }) => {
   });
 });
 
-const transformSearchResult = (data: any): TMovieSearchResult[] => {
+const transformSearchResult = (data: any): TMovie[] => {
   return data.results.map((searchResult) => ({
     id: searchResult.id,
     title: searchResult.title,
-    overview: searchResult.overview,
+    genres: "",
     posterPath: searchResult.poster_path,
+    runtime: "",
+    release_date: "",
+    overview: searchResult.overview,
+    watchProviders: "",
   }));
 };
 
@@ -113,9 +117,6 @@ const getWatchProviders = async (id: number): Promise<TWatchProvider[]> => {
 
 const getMediaById = async (id: number): Promise<TMovie> => {
   const watchProviders = await getWatchProviders(id);
-
-  const url = buildGetMovieByIdUrl(id);
-  console.log("url", url);
 
   return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
     return {
@@ -198,15 +199,15 @@ const search = privateProcedure
   .input(z.object({ text: z.string() }))
   .query(async ({ input }) => {
     if (input.text) {
-      return axios.get(buildSearchUrl(input.text)).then((res) => {
-        return transformSearchResult(res.data);
-      });
-
-      // const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
-
-      // return readFile(mockFilePath).then((data) => {
-      //   return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+      // return axios.get(buildSearchUrl(input.text)).then((res) => {
+      //   return transformSearchResult(res.data);
       // });
+
+      const mockFilePath = `${process.env.PWD}/src/mock/search.json`;
+
+      return readFile(mockFilePath).then((data) => {
+        return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+      });
     }
 
     return [];
