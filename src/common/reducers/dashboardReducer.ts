@@ -118,10 +118,18 @@ export const reducer = (
         const cardToMove = draft[fromStatus].cards.find(
           (c) => c.id === movieId
         );
+
+        if (!cardToMove) return;
+
         draft[fromStatus].cards = draft[fromStatus].cards.filter(
           (c) => c.id !== movieId
         );
-        draft[toStatus].cards = [...draft[toStatus].cards, cardToMove];
+
+        const toStatusCards = draft[toStatus].cards || [];
+        draft[toStatus].cards = [
+          ...toStatusCards,
+          { ...cardToMove, status: toStatus },
+        ];
       });
     }
     case ActionType.DELETE_MOVIE: {

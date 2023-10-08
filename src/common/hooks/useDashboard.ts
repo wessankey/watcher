@@ -1,10 +1,7 @@
 import { DragEndEvent } from "@dnd-kit/core";
 import { Status } from "@prisma/client";
 import { useEffect, useReducer, useState } from "react";
-import type {
-  TMovie,
-  TMovieSearchResult,
-} from "~/server/api/routers/dashboard";
+import type { TMovie } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { ActionType, reducer } from "../reducers/dashboardReducer";
 import { TMedia } from "../types";
@@ -42,7 +39,6 @@ export const DEFAULT_STATE: TDashboardState = {
 export type TStatus = (typeof Status)[keyof typeof Status];
 
 export const useDashboard = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [addCardLoading, setAddCardLoading] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
   const [isDragging, setIsDragging] = useState(false);
@@ -55,13 +51,10 @@ export const useDashboard = () => {
 
   const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);
 
-  const { data, refetch } = api.dashboard.getMedia.useQuery();
-
-  useEffect(() => {
-    if (data) {
-      dispatch({ type: ActionType.HYDRATE_FROM_DB, payload: { data } });
-    }
-  }, [data]);
+  const { isLoading } = api.dashboard.getMedia.useQuery(undefined, {
+    onSuccess: (data) =>
+      dispatch({ type: ActionType.HYDRATE_FROM_DB, payload: { data } }),
+  });
 
   const flattenedLaneState = dashboardState
     ? Object.entries(dashboardState).flatMap(([id, lane]) => {
