@@ -26,7 +26,12 @@ type TDashboardState = {
 type TAction =
   | {
       type: typeof ActionType.ADD_MOVIE;
-      payload: {};
+      payload: Pick<
+        TMedia,
+        "id" | "title" | "mediaType" | "posterPath" | "genres"
+      > & {
+        status: Status;
+      };
     }
   | {
       type: typeof ActionType.MOVE_MOVIE;
@@ -89,7 +94,22 @@ export const reducer = (
       });
     }
     case ActionType.ADD_MOVIE: {
-      return state;
+      const { id, genres, mediaType, posterPath, status, title } =
+        action.payload;
+
+      return produce(state, (draft) => {
+        const newCard: TMedia = {
+          id,
+          genres,
+          mediaType,
+          posterPath,
+          status,
+          title,
+          order: draft[status].cards.length - 1,
+        };
+
+        draft[status].cards = [...draft[status].cards, newCard];
+      });
     }
     case ActionType.MOVE_MOVIE: {
       const { movieId, fromStatus, toStatus } = action.payload;

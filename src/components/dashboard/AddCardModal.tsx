@@ -19,7 +19,7 @@ export const AddCardModal = ({
   isOpen: boolean;
   addCardLoading: boolean;
   onClose: () => void;
-  onAdd: (resultToAdd: TMovieSearchResult, cleanup: () => void) => void;
+  onAdd: (resultToAdd: TMovie, cleanup: () => void) => void;
 }) => {
   const [selectedResult, setSelectedResult] = useState<TMovie | undefined>();
   const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();

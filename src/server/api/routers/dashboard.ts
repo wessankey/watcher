@@ -233,6 +233,14 @@ const addMedia = privateProcedure
       id: z.number(),
       // TODO: is there a way to generate this enum programmatically?
       status: z.enum([Status.WATCHING, Status.WANT_TO_WATCH, Status.WATCHED]),
+      title: z.string(),
+      posterPath: z.string(),
+      genres: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+        })
+      ),
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -243,21 +251,19 @@ const addMedia = privateProcedure
       },
     });
 
-    // If the media doesn't exist in the DB, pull it from the API and persist it
+    // If the media doesn't exist in the DB, persist it
     if (!media) {
-      const mediaData = await getMediaById(input.id);
-
       media = await ctx.prisma.media.create({
         data: {
-          id: mediaData.id,
-          title: mediaData.title,
+          id: input.id,
+          title: input.title,
           genres: {
-            connectOrCreate: mediaData.genres.map((genre) => ({
+            connectOrCreate: input.genres.map((genre) => ({
               where: { id: genre.id },
               create: { id: genre.id, name: genre.name },
             })),
           },
-          posterPath: mediaData.posterPath,
+          posterPath: input.posterPath,
           mediaType: MediaType.MOVIE,
         },
       });

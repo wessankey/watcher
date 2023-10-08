@@ -1,9 +1,11 @@
 import { DragEndEvent } from "@dnd-kit/core";
+import { Status } from "@prisma/client";
 import { useEffect, useReducer, useState } from "react";
-import type { TMovieSearchResult } from "~/server/api/routers/dashboard";
+import type {
+  TMovie,
+  TMovieSearchResult,
+} from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
-
-import { Genre, Media, Status, UserMedia } from "@prisma/client";
 import { ActionType, reducer } from "../reducers/dashboardReducer";
 import { TMedia } from "../types";
 
@@ -118,11 +120,39 @@ export const useDashboard = () => {
   });
 
   const { mutate: addCardMutation } = api.dashboard.addMedia.useMutation({
-    onSuccess: () => {
-      console.log("first onSuccess");
+    // onSuccess: () => {
+    //   setAddCardLoading(false);
+    //   refetch();
+    //   handleCloseAddCardModal();
+    // },
+    onMutate: (payload) => {
       setAddCardLoading(false);
-      refetch();
+
+      if (!payload) return;
+
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      utils.dashboard.getMedia.cancel();
+
+      // Snapshot previous value
+      const previousState = utils.dashboard.getMedia.getData();
+
+      // Optimistically update the data
+      dispatch({
+        type: "ADD_MOVIE",
+        payload: {
+          id: payload.id,
+          title: payload.title,
+          posterPath: payload.posterPath,
+          genres: payload.genres,
+          mediaType: "MOVIE",
+          status: payload.status,
+        },
+      });
+
       handleCloseAddCardModal();
+
+      // Return previous data so we can revert if there was an error
+      return { previousState };
     },
     onError: (err) => {
       console.log("Error adding media:", err);
@@ -163,13 +193,16 @@ export const useDashboard = () => {
     setIsDragging(true);
   };
 
-  const handleAddCard = (
-    resultToAdd: TMovieSearchResult,
-    cleanup?: () => void
-  ) => {
+  const handleAddCard = (resultToAdd: TMovie, cleanup?: () => void) => {
     setAddCardLoading(true);
     addCardMutation(
-      { id: resultToAdd.id, status: addCardStatus },
+      {
+        id: resultToAdd.id,
+        status: addCardStatus,
+        title: resultToAdd.title,
+        posterPath: resultToAdd.posterPath,
+        genres: resultToAdd.genres,
+      },
       { onSuccess: () => cleanup && cleanup() }
     );
   };
