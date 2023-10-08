@@ -3,12 +3,13 @@ import { type AppType } from "next/app";
 import { api } from "~/utils/api";
 import "~/styles/globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-const inter = Inter({
+const inter = Poppins({
+  weight: "400",
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-poppins",
 });
 
 const MyApp: AppType = ({ Component, pageProps }) => {

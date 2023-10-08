@@ -31,7 +31,7 @@ export const AddCardModal = ({
 
   const query = api.dashboard.findMovieById.useQuery(
     {
-      movieId: selectedMovieId,
+      movieId: selectedMovieId || 0,
     },
     {
       enabled: !!selectedMovieId,
@@ -39,7 +39,7 @@ export const AddCardModal = ({
     }
   );
 
-  const handleResultClick = (result: TMovieSearchResult | undefined) => {
+  const handleResultClick = (result: TMovieSearchResult) => {
     setSelectedMovieId(result.id);
   };
 
@@ -66,23 +66,35 @@ export const AddCardModal = ({
         </div>
       }
       footer={
-        <div className="flex justify-end gap-5">
-          <button
-            onClick={() => {
-              resetState();
-              onClose();
-            }}
-            className="rounded-md bg-red-700 px-3 py-1 text-white"
-          >
-            Cancel
-          </button>
-          <button
-            disabled={!selectedResult}
-            onClick={handleAddClick}
-            className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {addCardLoading ? <LoadingSpinner /> : <span>Add</span>}
-          </button>
+        <div className="flex justify-between">
+          <div>
+            {selectedResult && (
+              <button
+                onClick={() => setSelectedResult(undefined)}
+                className="rounded-md bg-gray-400 px-3 py-1 text-white"
+              >
+                Back to Results
+              </button>
+            )}
+          </div>
+          <div className="flex justify-end gap-5">
+            <button
+              onClick={() => {
+                resetState();
+                onClose();
+              }}
+              className="rounded-md bg-red-700 px-3 py-1 text-white"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!selectedResult}
+              onClick={handleAddClick}
+              className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
         </div>
       }
     ></Modal>
@@ -94,13 +106,13 @@ const MediaSearch = ({
   onResultClick,
 }: {
   selectedResult?: TMovie;
-  onResultClick: (result: TMovieSearchResult | undefined) => void;
+  onResultClick: (result: TMovieSearchResult) => void;
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const onUpdate = debounce((e: React.ChangeEvent<HTMLInputElement>) => {
     if (selectedResult) {
-      onResultClick(undefined);
+      onResultClick(selectedResult);
     }
 
     setSearchTerm(e.target.value);
@@ -110,7 +122,7 @@ const MediaSearch = ({
     onResultClick(result);
   };
 
-  const { data } = api.dashboard.search.useQuery({
+  const { data, isLoading } = api.dashboard.search.useQuery({
     text: searchTerm || "",
   });
 
@@ -129,10 +141,14 @@ const MediaSearch = ({
             />
           </div>
           <div className="flex-1 overflow-auto">
-            <SearchResultList
-              results={data || []}
-              onSelectResult={onSelectResult}
-            />
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : (
+              <SearchResultList
+                results={data || []}
+                onSelectResult={onSelectResult}
+              />
+            )}
           </div>
         </div>
       )}
