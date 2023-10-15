@@ -1,11 +1,11 @@
 import Image from "next/image";
+import { TTvShow } from "~/server/api/routers/dashboard";
 import { GenreTag } from "./GenreTag";
-import { TMovie } from "~/server/api/routers/dashboard";
 
-export const MovieDetail = ({ data }: { data: TMovie }) => {
+export const TvShowDetail = ({ data }: { data: TTvShow }) => {
   return (
     <div className="flex w-full flex-col rounded-md border border-zinc-200 bg-zinc-100 p-3 shadow-lg">
-      <h3 className="text-xl font-medium tracking-wide">{data?.title}</h3>
+      <h3 className="text-xl font-medium tracking-wide">{data?.name}</h3>
 
       <div className="mt-3 grid flex-1 grid-cols-5 grid-rows-3 gap-x-8">
         <div className="col-span-3 row-span-2">
@@ -26,11 +26,8 @@ export const MovieDetail = ({ data }: { data: TMovie }) => {
         </div>
 
         <div className="col-span-3">
-          <p className="mt-3 text-sm text-zinc-600">
-            Runtime: {data?.runtime} minutes
-          </p>
           <p className="mt-1 text-sm text-zinc-600">
-            Release Date: {data?.releaseDate}
+            First Air Date: {data?.firstAirDate}
           </p>
           <div className="mt-2 flex gap-1">
             {data?.genres.slice(0, 2).map((genre) => {

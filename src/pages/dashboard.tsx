@@ -12,23 +12,22 @@ import {
   TrashIcon,
   TvIcon,
 } from "@heroicons/react/24/solid";
-import { Status } from "@prisma/client";
+import { MediaType, Status } from "@prisma/client";
 import { Spinner } from "flowbite-react";
 import { NextPage } from "next";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { AddCardModal } from "~/components/dashboard/AddCardModal";
-import { GenreTag } from "~/components/dashboard/GenreTag";
-import { MovieDetailModal } from "~/components/dashboard/MovieDetailModal";
 import { useDashboard } from "~/common/hooks/useDashboard";
 import { TMedia } from "~/common/types";
+import { AddMovieModal } from "~/components/dashboard/AddMovieModal";
+import { AddTvModal } from "~/components/dashboard/AddTvModal";
+import { GenreTag } from "~/components/dashboard/GenreTag";
+import { MovieDetailModal } from "~/components/dashboard/MovieDetailModal";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 
 const Dashboard: NextPage = () => {
@@ -50,14 +49,16 @@ const Dashboard: NextPage = () => {
     addCardLoading,
     isDragging,
     dashboardState,
-    showAddCardModal,
+    showAddMediaModal,
     selectedMovieId,
+    addMediaType,
     handleCloseMovieDetailModal,
     handleSelectMovie,
     handleStartDragging,
-    handleAddCard,
+    handleAddMovie,
+    handleAddTvShow,
     handleAddCardClick,
-    handleCloseAddCardModal,
+    handleCloseAddMediaModal,
     handleDragEnd,
   } = useDashboard();
 
@@ -70,11 +71,16 @@ const Dashboard: NextPage = () => {
   return mounted ? (
     <div className="flex h-screen flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
       <h1 className="pl-5 pt-8 text-4xl font-bold text-white">🍿Watcher</h1>
-      <AddCardModal
-        isOpen={showAddCardModal}
+      <AddMovieModal
+        isOpen={showAddMediaModal && addMediaType === MediaType.MOVIE}
         addCardLoading={addCardLoading}
-        onClose={handleCloseAddCardModal}
-        onAdd={handleAddCard}
+        onClose={handleCloseAddMediaModal}
+        onAdd={handleAddMovie}
+      />
+      <AddTvModal
+        isOpen={showAddMediaModal && addMediaType === MediaType.TV_SHOW}
+        onClose={handleCloseAddMediaModal}
+        onAdd={handleAddTvShow}
       />
       <MovieDetailModal
         id={selectedMovieId}
@@ -136,7 +142,7 @@ const Lane = ({
   cards: TMedia[];
   isLoading: boolean;
   selectMovie: (id: number) => void;
-  onAddCardClick: (status: Status) => void;
+  onAddCardClick: (status: Status, mediaType: MediaType) => void;
   onStartDragging: () => void;
 }) => {
   const { isOver, setNodeRef } = useDroppable({ id: status });
@@ -152,8 +158,6 @@ const Lane = ({
         <div className="mx-4 mt-3">
           <h3 className="text-2xl font-bold">{name}</h3>
 
-          {/* <button onClick={() => onAddCardClick(status)}></button> */}
-
           <DropdownMenu>
             <DropdownMenuTrigger
               className="justify mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-1
@@ -163,8 +167,16 @@ const Lane = ({
               <p>Add</p>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-full">
-              <DropdownMenuItem>Movie</DropdownMenuItem>
-              <DropdownMenuItem>TV Show</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onAddCardClick(status, MediaType.MOVIE)}
+              >
+                Movie
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onAddCardClick(status, MediaType.TV_SHOW)}
+              >
+                TV Show
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

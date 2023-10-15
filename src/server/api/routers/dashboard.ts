@@ -16,13 +16,30 @@ export type TMovieSearchResult = {
   posterPath: string;
 };
 
+export type TTvSearchResult = {
+  id: number;
+  name: string;
+  overview: string;
+  posterPath: string;
+};
+
 export type TMovie = {
   id: number;
   title: string;
   genres: { id: number; name: string }[];
   posterPath: string;
   runtime: string;
-  release_date: string;
+  releaseDate: string;
+  overview: string;
+  watchProviders: TWatchProvider[];
+};
+
+export type TTvShow = {
+  id: number;
+  name: string;
+  genres: { id: number; name: string }[];
+  posterPath: string;
+  firstAirDate: string;
   overview: string;
   watchProviders: TWatchProvider[];
 };
@@ -62,14 +79,26 @@ const getMedia = privateProcedure.query(async ({ ctx }) => {
   });
 });
 
-const transformSearchResult = (data: any): TMovie[] => {
+const transformMovieSearchResult = (data: any): TMovie[] => {
   return data.results.map((searchResult: any) => ({
     id: searchResult.id,
     title: searchResult.title,
     genres: "",
     posterPath: searchResult.poster_path,
     runtime: "",
-    release_date: "",
+    releaseDate: "",
+    overview: searchResult.overview,
+    watchProviders: "",
+  }));
+};
+
+const transformTvSearchResult = (data: any): TTvShow[] => {
+  return data.results.map((searchResult: any) => ({
+    id: searchResult.id,
+    name: searchResult.name,
+    genres: "",
+    posterPath: searchResult.poster_path,
+    firstAirDate: "",
     overview: searchResult.overview,
     watchProviders: "",
   }));
@@ -115,46 +144,85 @@ const getWatchProviders = async (id: number): Promise<TWatchProvider[]> => {
   //   });
 };
 
-const getMediaById = async (id: number): Promise<TMovie> => {
-  const watchProviders = await getWatchProviders(id);
+const getMovieById = async (id: number): Promise<TMovie> => {
+  // const watchProviders = await getWatchProviders(id);
 
-  return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
-    return {
-      id: res.data.id,
-      title: res.data.title,
-      genres: res.data.genres,
-      last_updated: new Date(),
-      posterPath: res.data.poster_path,
-      runtime: res.data.runtime,
-      release_date: res.data.release_date,
-      overview: res.data.overview,
-      watchProviders,
-    };
-  });
+  // return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
+  //   return {
+  //     id: res.data.id,
+  //     title: res.data.title,
+  //     genres: res.data.genres,
+  //     last_updated: new Date(),
+  //     posterPath: res.data.poster_path,
+  //     runtime: res.data.runtime,
+  //     releaseDate: res.data.release_date,
+  //     overview: res.data.overview,
+  //     watchProviders,
+  //   };
+  // });
 
-  // const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
+  const mockFilePath = `${process.env.PWD}/src/mock/movie.json`;
 
-  // return readFile(mockFilePath)
-  //   .then((data) => JSON.parse(data.toString()))
-  //   .then((data) => {
-  //     return {
-  //       id: data.id,
-  //       title: data.title,
-  //       genres: data.genres,
-  //       last_updated: new Date(),
-  //       posterPath: data.poster_path,
-  //       runtime: data.runtime,
-  //       release_date: data.release_date,
-  //       overview: data.overview,
-  //       watchProviders,
-  //     };
-  //   });
+  return readFile(mockFilePath)
+    .then((data) => JSON.parse(data.toString()))
+    .then((data) => {
+      return {
+        id: data.id,
+        title: data.title,
+        genres: data.genres,
+        posterPath: data.poster_path,
+        runtime: data.runtime,
+        releaseDate: data.release_date,
+        overview: data.overview,
+        watchProviders: [],
+      };
+    });
+};
+
+const getTvShowById = async (id: number): Promise<TTvShow> => {
+  // const watchProviders = await getWatchProviders(id);
+
+  // return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
+  //   return {
+  //     id: res.data.id,
+  //     title: res.data.title,
+  //     genres: res.data.genres,
+  //     last_updated: new Date(),
+  //     posterPath: res.data.poster_path,
+  //     runtime: res.data.runtime,
+  //     releaseDate: res.data.release_date,
+  //     overview: res.data.overview,
+  //     watchProviders,
+  //   };
+  // });
+
+  const mockFilePath = `${process.env.PWD}/src/mock/tv-show.json`;
+
+  return readFile(mockFilePath)
+    .then((data) => JSON.parse(data.toString()))
+    .then((data) => {
+      return {
+        id: data.id,
+        name: data.name,
+        genres: data.genres,
+        posterPath: data.poster_path,
+        firstAirDate: data.first_air_date,
+        overview: data.overview,
+        watchProviders: [],
+      };
+    });
 };
 
 const findMovieById = privateProcedure
   .input(z.object({ movieId: z.number() }))
   .query(async ({ input }) => {
-    return await getMediaById(input.movieId);
+    return await getMovieById(input.movieId);
+  });
+
+const findTvShowById = privateProcedure
+  .input(z.object({ tvShowId: z.number() }))
+  .query(async ({ input }) => {
+    return await getTvShowById(input.tvShowId);
   });
 
 const changeCardStatus = privateProcedure
@@ -209,25 +277,44 @@ const deleteMedia = privateProcedure
     return true;
   });
 
-const search = privateProcedure
+const movieSearch = privateProcedure
   .input(z.object({ text: z.string() }))
   .query(async ({ input }) => {
     if (input.text) {
       // return axios.get(buildSearchUrl(input.text)).then((res) => {
-      //   return transformSearchResult(res.data);
+      //   return transformMovieSearchResult(res.data);
       // });
-
-      const mockFilePath = `${process.env.PWD}/src/mock/tv-search.json`;
+      const mockFilePath = `${process.env.PWD}/src/mock/movie-search.json`;
 
       return readFile(mockFilePath).then((data) => {
-        return transformSearchResult(JSON.parse(data.toString())).slice(0, 5);
+        return transformMovieSearchResult(JSON.parse(data.toString())).slice(
+          0,
+          5
+        );
       });
     }
 
     return [];
   });
 
-const addMedia = privateProcedure
+const tvShowSearch = privateProcedure
+  .input(z.object({ text: z.string() }))
+  .query(async ({ input }) => {
+    if (input.text) {
+      // return axios.get(buildSearchUrl(input.text)).then((res) => {
+      //   return transformMovieSearchResult(res.data);
+      // });
+      const mockFilePath = `${process.env.PWD}/src/mock/tv-search.json`;
+
+      return readFile(mockFilePath).then((data) => {
+        return transformTvSearchResult(JSON.parse(data.toString())).slice(0, 5);
+      });
+    }
+
+    return [];
+  });
+
+const addMovie = privateProcedure
   .input(
     z.object({
       id: z.number(),
@@ -288,11 +375,74 @@ const addMedia = privateProcedure
     return res;
   });
 
+const addTvShow = privateProcedure
+  .input(
+    z.object({
+      id: z.number(),
+      status: z.enum([Status.WATCHING, Status.WANT_TO_WATCH, Status.WATCHED]),
+      name: z.string(),
+      posterPath: z.string(),
+      genres: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+        })
+      ),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    // Check if media exists
+    let media = await ctx.prisma.media.findUnique({
+      where: {
+        id: input.id,
+      },
+    });
+
+    // If the media doesn't exist in the DB, persist it
+    if (!media) {
+      media = await ctx.prisma.media.create({
+        data: {
+          id: input.id,
+          title: input.name,
+          genres: {
+            connectOrCreate: input.genres.map((genre) => ({
+              where: { id: genre.id },
+              create: { id: genre.id, name: genre.name },
+            })),
+          },
+          posterPath: input.posterPath,
+          mediaType: MediaType.TV_SHOW,
+        },
+      });
+    }
+
+    const res = await ctx.prisma.userMedia.create({
+      data: {
+        mediaId: media.id,
+        userId: ctx.userId,
+        order: 0,
+        status: input.status,
+      },
+      include: {
+        Media: {
+          include: {
+            genres: true,
+          },
+        },
+      },
+    });
+
+    return res;
+  });
+
 export const dashboardRouter = createTRPCRouter({
-  search,
+  movieSearch,
+  tvShowSearch,
   getMedia,
   findMovieById,
+  findTvShowById,
   changeCardStatus,
   deleteMedia,
-  addMedia,
+  addMovie,
+  addTvShow,
 });

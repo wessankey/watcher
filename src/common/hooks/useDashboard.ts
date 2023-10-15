@@ -1,7 +1,7 @@
 import { DragEndEvent } from "@dnd-kit/core";
-import { Status } from "@prisma/client";
-import { useEffect, useReducer, useState } from "react";
-import type { TMovie } from "~/server/api/routers/dashboard";
+import { MediaType, Status } from "@prisma/client";
+import { useReducer, useState } from "react";
+import type { TMovie, TTvShow } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { ActionType, reducer } from "../reducers/dashboardReducer";
 import { TMedia } from "../types";
@@ -42,7 +42,8 @@ export const useDashboard = () => {
   const [addCardLoading, setAddCardLoading] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
   const [isDragging, setIsDragging] = useState(false);
-  const [showAddCardModal, setShowAddCardModal] = useState(false);
+  const [addMediaType, setAddMediaType] = useState<MediaType>();
+  const [showAddMediaModal, setShowAddMediaModal] = useState(false);
   const [addCardStatus, setAddCardStatus] = useState<TStatus>(
     Status.WANT_TO_WATCH
   );
@@ -112,12 +113,7 @@ export const useDashboard = () => {
     },
   });
 
-  const { mutate: addCardMutation } = api.dashboard.addMedia.useMutation({
-    // onSuccess: () => {
-    //   setAddCardLoading(false);
-    //   refetch();
-    //   handleCloseAddCardModal();
-    // },
+  const { mutate: addMovieMutation } = api.dashboard.addMovie.useMutation({
     onMutate: (payload) => {
       setAddCardLoading(false);
 
@@ -142,7 +138,7 @@ export const useDashboard = () => {
         },
       });
 
-      handleCloseAddCardModal();
+      handleCloseAddMediaModal();
 
       // Return previous data so we can revert if there was an error
       return { previousState };
@@ -152,13 +148,49 @@ export const useDashboard = () => {
     },
   });
 
-  const handleAddCardClick = (status: Status) => {
+  const { mutate: addTvShowMutation } = api.dashboard.addTvShow.useMutation({
+    onMutate: (payload) => {
+      setAddCardLoading(false);
+
+      if (!payload) return;
+
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      utils.dashboard.getMedia.cancel();
+
+      // Snapshot previous value
+      const previousState = utils.dashboard.getMedia.getData();
+
+      // Optimistically update the data
+      dispatch({
+        type: "ADD_MOVIE",
+        payload: {
+          id: payload.id,
+          title: payload.name,
+          posterPath: payload.posterPath,
+          genres: payload.genres,
+          mediaType: MediaType.TV_SHOW,
+          status: payload.status,
+        },
+      });
+
+      handleCloseAddMediaModal();
+
+      // Return previous data so we can revert if there was an error
+      return { previousState };
+    },
+    onError: (err) => {
+      console.log("Error adding media:", err);
+    },
+  });
+
+  const handleAddCardClick = (status: Status, mediaType: MediaType) => {
+    setAddMediaType(mediaType);
+    setShowAddMediaModal(true);
     setAddCardStatus(status);
-    setShowAddCardModal(true);
   };
 
-  const handleCloseAddCardModal = () => {
-    setShowAddCardModal(false);
+  const handleCloseAddMediaModal = () => {
+    setShowAddMediaModal(false);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -186,13 +218,27 @@ export const useDashboard = () => {
     setIsDragging(true);
   };
 
-  const handleAddCard = (resultToAdd: TMovie, cleanup?: () => void) => {
+  const handleAddMovie = (resultToAdd: TMovie, cleanup?: () => void) => {
     setAddCardLoading(true);
-    addCardMutation(
+    addMovieMutation(
       {
         id: resultToAdd.id,
         status: addCardStatus,
         title: resultToAdd.title,
+        posterPath: resultToAdd.posterPath,
+        genres: resultToAdd.genres,
+      },
+      { onSuccess: () => cleanup && cleanup() }
+    );
+  };
+
+  const handleAddTvShow = (resultToAdd: TTvShow, cleanup?: () => void) => {
+    setAddCardLoading(true);
+    addTvShowMutation(
+      {
+        id: resultToAdd.id,
+        status: addCardStatus,
+        name: resultToAdd.name,
         posterPath: resultToAdd.posterPath,
         genres: resultToAdd.genres,
       },
@@ -209,14 +255,16 @@ export const useDashboard = () => {
     addCardLoading,
     isDragging,
     dashboardState,
-    showAddCardModal,
+    showAddMediaModal,
     selectedMovieId,
+    addMediaType,
     handleCloseMovieDetailModal,
     handleSelectMovie,
     handleStartDragging,
-    handleAddCard,
+    handleAddMovie,
+    handleAddTvShow,
     handleAddCardClick,
-    handleCloseAddCardModal,
+    handleCloseAddMediaModal,
     handleDragEnd,
   };
 };

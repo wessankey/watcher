@@ -1,49 +1,47 @@
 import debounce from "lodash.debounce";
 import Image from "next/image";
 import { useState } from "react";
-import type {
-  TMovie,
-  TMovieSearchResult,
-} from "~/server/api/routers/dashboard";
+import type { TTvSearchResult, TTvShow } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Modal } from "../common/Modal";
-import { MovieDetail } from "./MovieDetail";
+import { TvShowDetail } from "./TTvShowDetail";
 
-export const AddCardModal = ({
+export const AddTvModal = ({
   isOpen,
-  addCardLoading,
   onClose,
   onAdd,
 }: {
   isOpen: boolean;
-  addCardLoading: boolean;
   onClose: () => void;
-  onAdd: (resultToAdd: TMovie, cleanup: () => void) => void;
+  onAdd: (resultToAdd: TTvShow, cleanup: () => void) => void;
 }) => {
-  const [selectedResult, setSelectedResult] = useState<TMovie | undefined>();
-  const [selectedMovieId, setSelectedMovieId] = useState<number | undefined>();
+  const [selectedResult, setSelectedResult] = useState<TTvShow | undefined>();
+  const [selectedTvShowId, setSelectedTvShowId] = useState<
+    number | undefined
+  >();
 
   const resetState = () => {
     setSelectedResult(undefined);
-    setSelectedMovieId(undefined);
+    setSelectedTvShowId(undefined);
   };
 
-  const query = api.dashboard.findMovieById.useQuery(
+  api.dashboard.findTvShowById.useQuery(
     {
-      movieId: selectedMovieId || 0,
+      tvShowId: selectedTvShowId || 0,
     },
     {
-      enabled: !!selectedMovieId,
+      enabled: !!selectedTvShowId,
       onSuccess: (data) => setSelectedResult(data),
     }
   );
 
-  const handleResultClick = (result: TMovieSearchResult) => {
-    setSelectedMovieId(result.id);
+  const handleResultClick = (result: TTvSearchResult) => {
+    setSelectedTvShowId(result.id);
   };
 
   const handleAddClick = () => {
+    console.log("selectedResult:", selectedResult);
     if (selectedResult) {
       onAdd(selectedResult, resetState);
     }
@@ -51,7 +49,7 @@ export const AddCardModal = ({
 
   return (
     <Modal
-      title="Add a Movie 🎬"
+      title="Add a TV Show 📺"
       open={isOpen}
       onClose={() => {
         resetState();
@@ -105,8 +103,8 @@ const MediaSearch = ({
   selectedResult,
   onResultClick,
 }: {
-  selectedResult?: TMovie;
-  onResultClick: (result: TMovieSearchResult) => void;
+  selectedResult?: TTvShow;
+  onResultClick: (result: TTvSearchResult) => void;
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -118,25 +116,21 @@ const MediaSearch = ({
     setSearchTerm(e.target.value);
   }, 500);
 
-  const onSelectResult = (result: TMovieSearchResult) => {
-    onResultClick(result);
-  };
-
-  const { data, isLoading } = api.dashboard.search.useQuery({
+  const { data, isLoading } = api.dashboard.tvShowSearch.useQuery({
     text: searchTerm || "",
   });
 
   return (
     <div className="flex h-full flex-col">
       {selectedResult ? (
-        <MovieDetail data={selectedResult} />
+        <TvShowDetail data={selectedResult} />
       ) : (
         <div className="overflow-auto">
           <div className="h-12 w-full">
             <input
               className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
               type="text"
-              placeholder="Search for a movie"
+              placeholder="Search for a TV show"
               onChange={onUpdate}
             />
           </div>
@@ -146,7 +140,7 @@ const MediaSearch = ({
             ) : (
               <SearchResultList
                 results={data || []}
-                onSelectResult={onSelectResult}
+                onSelectResult={onResultClick}
               />
             )}
           </div>
@@ -160,8 +154,8 @@ const SearchResultList = ({
   results,
   onSelectResult,
 }: {
-  results: TMovieSearchResult[];
-  onSelectResult: (result: TMovieSearchResult) => void;
+  results: TTvSearchResult[];
+  onSelectResult: (result: TTvSearchResult) => void;
 }) => {
   return (
     <div className="py-1">
@@ -182,8 +176,8 @@ const SearchResultItem = ({
   result,
   onSelectResult,
 }: {
-  result: TMovieSearchResult;
-  onSelectResult: (result: TMovieSearchResult) => void;
+  result: TTvSearchResult;
+  onSelectResult: (result: TTvSearchResult) => void;
 }) => {
   return (
     <div
@@ -192,10 +186,10 @@ const SearchResultItem = ({
       onClick={() => onSelectResult(result)}
     >
       <div>
-        <p>{result.title}</p>
+        <p>{result.name}</p>
 
         <div className="w-5/6">
-          <p className="text-sm line-clamp-2">{result.overview}</p>
+          <p className="line-clamp-2 text-sm">{result.overview}</p>
         </div>
       </div>
       {result.posterPath && (
