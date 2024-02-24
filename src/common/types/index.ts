@@ -1,4 +1,4 @@
-import { Genre, Media, Status, UserMedia } from "@prisma/client";
+import { Genre, Show, UserShow } from "@prisma/client";
 
-export type TMedia = Pick<Media, "id" | "title" | "mediaType" | "posterPath"> &
-  Pick<UserMedia, "order" | "status"> & { genres: Genre[] };
+export type TShow = Pick<Show, "id" | "title" | "posterPath"> &
+  Pick<UserShow, "order" | "status"> & { genres: Genre[] };

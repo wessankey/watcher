@@ -1,15 +1,15 @@
 import { DragEndEvent } from "@dnd-kit/core";
-import { MediaType, Status } from "@prisma/client";
+import { Status } from "@prisma/client";
 import { useReducer, useState } from "react";
-import type { TMovie, TTvShow } from "~/server/api/routers/dashboard";
+import type { TTvShow } from "~/server/api/routers/dashboard";
 import { api } from "~/utils/api";
 import { ActionType, reducer } from "../reducers/dashboardReducer";
-import { TMedia } from "../types";
+import { TShow } from "../types";
 
 export type TLane = {
   id: string;
   name: string;
-  cards: TMedia[];
+  cards: TShow[];
 };
 
 type TDashboardState = {
@@ -40,11 +40,9 @@ export type TStatus = (typeof Status)[keyof typeof Status];
 
 export const useDashboard = () => {
   const [addCardLoading, setAddCardLoading] = useState(false);
-  const [selectedMovieId, setSelectedMovieId] = useState<number>();
   const [selectedTvShowId, setSelectedTvShowId] = useState<number>();
   const [selectedTvShow, setSelectedTvShow] = useState<TTvShow>();
   const [isDragging, setIsDragging] = useState(false);
-  const [addMediaType, setAddMediaType] = useState<MediaType>();
   const [showAddMediaModal, setShowAddMediaModal] = useState(false);
   const [addCardStatus, setAddCardStatus] = useState<TStatus>(
     Status.WANT_TO_WATCH
@@ -54,7 +52,7 @@ export const useDashboard = () => {
 
   const [dashboardState, dispatch] = useReducer(reducer, DEFAULT_STATE);
 
-  const { isLoading } = api.dashboard.getMedia.useQuery(undefined, {
+  const { isLoading } = api.dashboard.getShow.useQuery(undefined, {
     onSuccess: (data) =>
       dispatch({ type: ActionType.HYDRATE_FROM_DB, payload: { data } }),
   });
@@ -79,18 +77,18 @@ export const useDashboard = () => {
         if (!payload) return;
 
         // Cancel outgoing refetches so they don't overwrite optimistic update
-        utils.dashboard.getMedia.cancel();
+        utils.dashboard.getShow.cancel();
 
         // Snapshot previous value
-        const previousState = utils.dashboard.getMedia.getData();
+        const previousState = utils.dashboard.getShow.getData();
 
         // Optimistically update the data with the move
         dispatch({
-          type: "MOVE_MOVIE",
+          type: "MOVE_SHOW",
           payload: {
             fromStatus: payload.fromStatus,
             toStatus: payload.toStatus,
-            movieId: payload.mediaId,
+            showId: payload.mediaId,
           },
         });
 
@@ -104,57 +102,22 @@ export const useDashboard = () => {
       if (!payload) return;
 
       // Cancel outgoing refetches so they don't overwrite optimistic update
-      utils.dashboard.getMedia.cancel();
+      utils.dashboard.getShow.cancel();
 
       // Snapshot previous value
-      const previousState = utils.dashboard.getMedia.getData();
+      const previousState = utils.dashboard.getShow.getData();
 
       // Optimistically update the data with the move
       dispatch({
-        type: "DELETE_MOVIE",
+        type: "DELETE_SHOW",
         payload: {
-          movieId: payload.id,
+          showId: payload.id,
           fromStatus: payload.fromStatus,
         },
       });
 
       // Return previous data so we can revert if there was an error
       return { previousState };
-    },
-  });
-
-  const { mutate: addMovieMutation } = api.dashboard.addMovie.useMutation({
-    onMutate: (payload) => {
-      setAddCardLoading(false);
-
-      if (!payload) return;
-
-      // Cancel outgoing refetches so they don't overwrite optimistic update
-      utils.dashboard.getMedia.cancel();
-
-      // Snapshot previous value
-      const previousState = utils.dashboard.getMedia.getData();
-
-      // Optimistically update the data
-      dispatch({
-        type: "ADD_MOVIE",
-        payload: {
-          id: payload.id,
-          title: payload.title,
-          posterPath: payload.posterPath,
-          genres: payload.genres,
-          mediaType: "MOVIE",
-          status: payload.status,
-        },
-      });
-
-      handleCloseAddMediaModal();
-
-      // Return previous data so we can revert if there was an error
-      return { previousState };
-    },
-    onError: (err) => {
-      console.log("Error adding media:", err);
     },
   });
 
@@ -165,20 +128,19 @@ export const useDashboard = () => {
       if (!payload) return;
 
       // Cancel outgoing refetches so they don't overwrite optimistic update
-      utils.dashboard.getMedia.cancel();
+      utils.dashboard.getShow.cancel();
 
       // Snapshot previous value
-      const previousState = utils.dashboard.getMedia.getData();
+      const previousState = utils.dashboard.getShow.getData();
 
       // Optimistically update the data
       dispatch({
-        type: "ADD_MOVIE",
+        type: "ADD_SHOW",
         payload: {
           id: payload.id,
           title: payload.name,
           posterPath: payload.posterPath,
           genres: payload.genres,
-          mediaType: MediaType.TV_SHOW,
           status: payload.status,
         },
       });
@@ -193,8 +155,7 @@ export const useDashboard = () => {
     },
   });
 
-  const handleAddCardClick = (status: Status, mediaType: MediaType) => {
-    setAddMediaType(mediaType);
+  const handleAddCardClick = (status: Status) => {
     setShowAddMediaModal(true);
     setAddCardStatus(status);
   };
@@ -228,20 +189,6 @@ export const useDashboard = () => {
     setIsDragging(true);
   };
 
-  const handleAddMovie = (resultToAdd: TMovie, cleanup?: () => void) => {
-    setAddCardLoading(true);
-    addMovieMutation(
-      {
-        id: resultToAdd.id,
-        status: addCardStatus,
-        title: resultToAdd.title,
-        posterPath: resultToAdd.posterPath,
-        genres: resultToAdd.genres,
-      },
-      { onSuccess: () => cleanup && cleanup() }
-    );
-  };
-
   const handleAddTvShow = (resultToAdd: TTvShow, cleanup?: () => void) => {
     setAddCardLoading(true);
     addTvShowMutation(
@@ -256,15 +203,9 @@ export const useDashboard = () => {
     );
   };
 
-  const handleSelectMedia = (id: number, mediaType: MediaType) => {
-    if (mediaType === MediaType.MOVIE) {
-      setSelectedMovieId(id);
-    } else if (mediaType === MediaType.TV_SHOW) {
-      setSelectedTvShowId(id);
-    }
+  const handleSelectMedia = (id: number) => {
+    setSelectedTvShowId(id);
   };
-
-  const handleCloseMovieDetailModal = () => setSelectedMovieId(undefined);
 
   const handleCloseTvShowDetailModal = () => {
     setSelectedTvShowId(undefined);
@@ -277,14 +218,10 @@ export const useDashboard = () => {
     isDragging,
     dashboardState,
     showAddMediaModal,
-    selectedMovieId,
     selectedTvShow,
-    addMediaType,
-    handleCloseMovieDetailModal,
     handleCloseTvShowDetailModal,
     handleSelectMedia,
     handleStartDragging,
-    handleAddMovie,
     handleAddTvShow,
     handleAddCardClick,
     handleCloseAddMediaModal,

@@ -1,20 +1,18 @@
-import { Genre, Media, Status, UserMedia } from "@prisma/client";
+import { Genre, Show, Status, UserShow } from "@prisma/client";
 import { produce } from "immer";
+import { TShow } from "../types";
 
 export const ActionType = {
-  ADD_MOVIE: "ADD_MOVIE",
-  MOVE_MOVIE: "MOVE_MOVIE",
-  DELETE_MOVIE: "DELETE_MOVIE",
+  ADD_SHOW: "ADD_SHOW",
+  MOVE_SHOW: "MOVE_SHOW",
+  DELETE_SHOW: "DELETE_SHOW",
   HYDRATE_FROM_DB: "HYDRATE_FROM_DB",
 } as const;
-
-export type TMedia = Pick<Media, "id" | "title" | "mediaType" | "posterPath"> &
-  Pick<UserMedia, "order" | "status"> & { genres: Genre[] };
 
 export type TLane = {
   id: string;
   name: string;
-  cards: TMedia[];
+  cards: TShow[];
 };
 
 type TDashboardState = {
@@ -25,34 +23,31 @@ type TDashboardState = {
 
 type TAction =
   | {
-      type: typeof ActionType.ADD_MOVIE;
-      payload: Pick<
-        TMedia,
-        "id" | "title" | "mediaType" | "posterPath" | "genres"
-      > & {
+      type: typeof ActionType.ADD_SHOW;
+      payload: Pick<TShow, "id" | "title" | "posterPath" | "genres"> & {
         status: Status;
       };
     }
   | {
-      type: typeof ActionType.MOVE_MOVIE;
+      type: typeof ActionType.MOVE_SHOW;
       payload: {
-        movieId: number;
+        showId: number;
         fromStatus: Status;
         toStatus: Status;
       };
     }
   | {
-      type: typeof ActionType.DELETE_MOVIE;
+      type: typeof ActionType.DELETE_SHOW;
       payload: {
-        movieId: number;
+        showId: number;
         fromStatus: Status;
       };
     }
   | {
       type: typeof ActionType.HYDRATE_FROM_DB;
       payload: {
-        data: (UserMedia & {
-          Media: Media & {
+        data: (UserShow & {
+          Show: Show & {
             genres: Genre[];
           };
         })[];
@@ -68,13 +63,12 @@ export const reducer = (
       const { data } = action.payload;
 
       return produce(state, (draft) => {
-        const transformedData: TMedia[] = data.map((userMedia) => {
+        const transformedData: TShow[] = data.map((userMedia) => {
           return {
-            id: userMedia.Media.id,
-            title: userMedia.Media.title,
-            mediaType: userMedia.Media.mediaType,
-            posterPath: userMedia.Media.posterPath,
-            genres: userMedia.Media.genres,
+            id: userMedia.Show.id,
+            title: userMedia.Show.title,
+            posterPath: userMedia.Show.posterPath,
+            genres: userMedia.Show.genres,
             status: userMedia.status,
             order: userMedia.order,
           };
@@ -93,15 +87,13 @@ export const reducer = (
         );
       });
     }
-    case ActionType.ADD_MOVIE: {
-      const { id, genres, mediaType, posterPath, status, title } =
-        action.payload;
+    case ActionType.ADD_SHOW: {
+      const { id, genres, posterPath, status, title } = action.payload;
 
       return produce(state, (draft) => {
-        const newCard: TMedia = {
+        const newCard: TShow = {
           id,
           genres,
-          mediaType,
           posterPath,
           status,
           title,
@@ -111,18 +103,16 @@ export const reducer = (
         draft[status].cards = [...draft[status].cards, newCard];
       });
     }
-    case ActionType.MOVE_MOVIE: {
-      const { movieId, fromStatus, toStatus } = action.payload;
+    case ActionType.MOVE_SHOW: {
+      const { showId, fromStatus, toStatus } = action.payload;
 
       return produce(state, (draft) => {
-        const cardToMove = draft[fromStatus].cards.find(
-          (c) => c.id === movieId
-        );
+        const cardToMove = draft[fromStatus].cards.find((c) => c.id === showId);
 
         if (!cardToMove) return;
 
         draft[fromStatus].cards = draft[fromStatus].cards.filter(
-          (c) => c.id !== movieId
+          (c) => c.id !== showId
         );
 
         const toStatusCards = draft[toStatus].cards || [];
@@ -132,12 +122,12 @@ export const reducer = (
         ];
       });
     }
-    case ActionType.DELETE_MOVIE: {
-      const { movieId, fromStatus } = action.payload;
+    case ActionType.DELETE_SHOW: {
+      const { showId, fromStatus } = action.payload;
 
       return produce(state, (draft) => {
         draft[fromStatus].cards = draft[fromStatus].cards.filter(
-          (c) => c.id !== movieId
+          (c) => c.id !== showId
         );
       });
     }

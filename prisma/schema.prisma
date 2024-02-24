@@ -12,11 +12,6 @@ datasource db {
     shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-enum MediaType {
-    MOVIE
-    TV_SHOW
-}
-
 enum Status {
     WATCHING
     WATCHED
@@ -24,28 +19,27 @@ enum Status {
 }
 
 model Genre {
-    id    Int     @id @default(autoincrement())
-    name  String  @unique
-    Media Media[]
+    id   Int    @id @default(autoincrement())
+    name String @unique
+    Show Show[]
 }
 
-model Media {
-    id          Int         @id @default(autoincrement())
+model Show {
+    id          Int        @id @default(autoincrement())
     title       String
-    mediaType   MediaType
-    lastUpdated DateTime    @default(now())
+    lastUpdated DateTime   @default(now())
     posterPath  String
     genres      Genre[]
-    UserMedia   UserMedia[]
+    UserShow    UserShow[]
 }
 
-model UserMedia {
-    userId  String
-    mediaId Int
-    status  Status
-    order   Int
+model UserShow {
+    userId String
+    showId Int
+    status Status
+    order  Int
 
-    Media Media @relation(fields: [mediaId], references: [id])
+    Show Show @relation(fields: [showId], references: [id])
 
-    @@unique([userId, mediaId])
+    @@unique([userId, showId])
 }
