@@ -14,7 +14,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useDashboard } from "~/common/hooks/useDashboard";
 import { TShow } from "~/common/types";
-import { AddTvModal } from "~/components/dashboard/AddTvModal";
+import { AddShowModal } from "~/components/dashboard/AddShowModal";
 import { GenreTag } from "~/components/dashboard/GenreTag";
 import { useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/router";
@@ -38,14 +38,14 @@ const Dashboard: NextPage = () => {
     isLoading,
     isDragging,
     dashboardState,
-    showAddMediaModal,
+    showAddShowModal,
     selectedTvShow,
     handleCloseTvShowDetailModal,
-    handleSelectMedia,
+    handleSelectShow,
     handleStartDragging,
     handleAddTvShow,
     handleAddCardClick,
-    handleCloseAddMediaModal,
+    handleCloseAddShowModal,
     handleDragEnd,
   } = useDashboard();
 
@@ -59,9 +59,9 @@ const Dashboard: NextPage = () => {
     <div className="flex h-screen flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-violet-700">
       <Header />
 
-      <AddTvModal
-        isOpen={showAddMediaModal}
-        onClose={handleCloseAddMediaModal}
+      <AddShowModal
+        isOpen={showAddShowModal}
+        onClose={handleCloseAddShowModal}
         onAdd={handleAddTvShow}
       />
 
@@ -79,7 +79,7 @@ const Dashboard: NextPage = () => {
               status={Status.WANT_TO_WATCH}
               name={dashboardState.WANT_TO_WATCH.name}
               cards={dashboardState.WANT_TO_WATCH.cards}
-              selectMedia={handleSelectMedia}
+              selectShow={handleSelectShow}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -89,7 +89,7 @@ const Dashboard: NextPage = () => {
               status={Status.WATCHING}
               name={dashboardState.WATCHING.name}
               cards={dashboardState.WATCHING.cards}
-              selectMedia={handleSelectMedia}
+              selectShow={handleSelectShow}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -99,7 +99,7 @@ const Dashboard: NextPage = () => {
               status={Status.WATCHED}
               name={dashboardState.WATCHED.name}
               cards={dashboardState.WATCHED.cards}
-              selectMedia={handleSelectMedia}
+              selectShow={handleSelectShow}
               onAddCardClick={handleAddCardClick}
               onStartDragging={handleStartDragging}
               isLoading={isLoading}
@@ -135,7 +135,7 @@ const Lane = ({
   name,
   cards,
   isLoading,
-  selectMedia,
+  selectShow,
   onAddCardClick,
   onStartDragging,
 }: {
@@ -143,7 +143,7 @@ const Lane = ({
   name: string;
   cards: TShow[];
   isLoading: boolean;
-  selectMedia: (id: number) => void;
+  selectShow: (id: number) => void;
   onAddCardClick: (status: Status) => void;
   onStartDragging: () => void;
 }) => {
@@ -159,7 +159,7 @@ const Lane = ({
       <div className="h-full">
         <div className="mx-4 mt-3">
           <h3 className="text-2xl font-bold">{name}</h3>
-          <AddMediaDropdown status={status} onAddCardClick={onAddCardClick} />
+          <AddShowDropdown status={status} onAddCardClick={onAddCardClick} />
         </div>
 
         {isLoading ? (
@@ -174,7 +174,7 @@ const Lane = ({
                   key={c.id}
                   {...c}
                   onStartDragging={onStartDragging}
-                  onClick={selectMedia}
+                  onClick={selectShow}
                 />
               );
             })}
@@ -185,7 +185,7 @@ const Lane = ({
   );
 };
 
-const AddMediaDropdown = ({
+const AddShowDropdown = ({
   status,
   onAddCardClick,
 }: {

@@ -7,7 +7,7 @@ import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Modal } from "../common/Modal";
 import { TvShowDetail } from "./TTvShowDetail";
 
-export const AddTvModal = ({
+export const AddShowModal = ({
   isOpen,
   onClose,
   onAdd,
@@ -48,7 +48,7 @@ export const AddTvModal = ({
 
   return (
     <Modal
-      title="Add a TV Show 📺"
+      title="Add Show"
       open={isOpen}
       onClose={() => {
         resetState();
@@ -56,7 +56,7 @@ export const AddTvModal = ({
       }}
       body={
         <div className="h-full">
-          <MediaSearch
+          <Search
             selectedResult={selectedResult}
             onResultClick={handleResultClick}
           />
@@ -68,7 +68,7 @@ export const AddTvModal = ({
             {selectedResult && (
               <button
                 onClick={() => setSelectedResult(undefined)}
-                className="rounded-md bg-gray-400 px-3 py-1 text-white"
+                className="rounded-md bg-gray-400 px-3 py-1 text-white hover:bg-gray-500"
               >
                 Back to Results
               </button>
@@ -80,14 +80,14 @@ export const AddTvModal = ({
                 resetState();
                 onClose();
               }}
-              className="rounded-md bg-red-700 px-3 py-1 text-white"
+              className="rounded-md bg-red-700 px-3 py-1 text-white hover:bg-red-800"
             >
               Cancel
             </button>
             <button
               disabled={!selectedResult}
               onClick={handleAddClick}
-              className="rounded-md bg-blue-700 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-blue-700 px-3 py-1 text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Add
             </button>
@@ -98,7 +98,7 @@ export const AddTvModal = ({
   );
 };
 
-const MediaSearch = ({
+const Search = ({
   selectedResult,
   onResultClick,
 }: {
@@ -127,7 +127,7 @@ const MediaSearch = ({
         <div className="overflow-auto">
           <div className="h-12 w-full">
             <input
-              className="w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
+              className="h-12 w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-gray-300 focus:ring-transparent"
               type="text"
               placeholder="Search for a TV show"
               onChange={onUpdate}
@@ -186,7 +186,6 @@ const SearchResultItem = ({
     >
       <div>
         <p>{result.name}</p>
-
         <div className="w-5/6">
           <p className="line-clamp-2 text-sm">{result.overview}</p>
         </div>

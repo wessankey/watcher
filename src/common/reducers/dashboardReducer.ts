@@ -63,14 +63,14 @@ export const reducer = (
       const { data } = action.payload;
 
       return produce(state, (draft) => {
-        const transformedData: TShow[] = data.map((userMedia) => {
+        const transformedData: TShow[] = data.map((userShow) => {
           return {
-            id: userMedia.Show.id,
-            title: userMedia.Show.title,
-            posterPath: userMedia.Show.posterPath,
-            genres: userMedia.Show.genres,
-            status: userMedia.status,
-            order: userMedia.order,
+            id: userShow.Show.id,
+            title: userShow.Show.title,
+            posterPath: userShow.Show.posterPath,
+            genres: userShow.Show.genres,
+            status: userShow.status,
+            order: userShow.order,
           };
         });
 

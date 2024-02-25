@@ -24,7 +24,7 @@ export const TvShowDetailModal = ({
         <div className="flex justify-end gap-5">
           <button
             onClick={onClose}
-            className="rounded-md bg-red-700 px-3 py-1 text-white"
+            className="rounded-md bg-red-700 px-3 py-1 text-white hover:bg-red-800"
           >
             Close
           </button>
@@ -69,20 +69,27 @@ export const TvShowDetail = ({ data }: { data: TTvShow }) => {
         </div>
 
         <div className="col-span-3 mt-4 flex gap-3 self-end">
-          {data?.watchProviders && data.watchProviders.length > 0 ? (
-            data?.watchProviders.map((provider) => {
-              return (
-                <Image
-                  key={provider.name}
-                  src={`${process.env.NEXT_PUBLIC_MOVIEDB_IMAGE_PREFIX}${provider.logoPath}`}
-                  alt="Streaming provider"
-                  width={45}
-                  height="0"
-                  style={{ height: "auto" }}
-                  className="rounded-md"
-                />
-              );
-            })
+          {data?.watchProviders.length ? (
+            <div>
+              <div className="flex">
+                {data?.watchProviders.map((provider) => {
+                  return (
+                    <Image
+                      key={provider.name}
+                      src={`${process.env.NEXT_PUBLIC_MOVIEDB_IMAGE_PREFIX}${provider.logoPath}`}
+                      alt="Streaming provider"
+                      width={45}
+                      height="0"
+                      style={{ height: "auto" }}
+                      className="rounded-md"
+                    />
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Streaming data provided by JustWatch
+              </p>
+            </div>
           ) : (
             <p className="text-sm text-zinc-600">
               Not available on streaming platforms

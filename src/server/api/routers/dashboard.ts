@@ -27,11 +27,22 @@ export type TTvShow = {
 };
 
 const buildSearchUrl = (text: string) => {
-  const url = `${process.env.NEXT_PUBLIC_MOVIEDB_URL}/search/movie`;
+  const url = `${process.env.NEXT_PUBLIC_MOVIEDB_URL}/search/tv`;
   const apiSegment = `?api_key=${process.env.NEXT_PUBLIC_MOVIEDB_API_KEY}`;
   const querySegment = `&query=${encodeURIComponent(text)}`;
 
   return `${url}${apiSegment}${querySegment}`;
+};
+
+const buildGetShowByIdUrl = (id: number, path?: string) => {
+  const url = `${process.env.NEXT_PUBLIC_MOVIEDB_URL}/tv/${id}/${path}`;
+  const apiSegment = `?api_key=${process.env.NEXT_PUBLIC_MOVIEDB_API_KEY}`;
+
+  return `${url}${apiSegment}`;
+};
+
+const buildGetWatchProvidersUrl = (id: number) => {
+  return buildGetShowByIdUrl(id, "watch/providers");
 };
 
 const getShow = privateProcedure.query(async ({ ctx }) => {
@@ -73,8 +84,36 @@ function readFile(path: string): Promise<Buffer> {
   });
 }
 
+const getWatchProviders = async (showId: number): Promise<TWatchProvider[]> => {
+  // return axios.get(buildGetWatchProvidersUrl(showId)).then((res) => {
+  //   const usProviders = res.data.results["US"];
+
+  //   if (usProviders && "flatrate" in usProviders) {
+  //     // @ts-ignore
+  //     return usProviders.flatrate.map((provider) => ({
+  //       name: provider.provider_name,
+  //       logoPath: provider.logo_path,
+  //     }));
+  //   }
+
+  //   return [];
+  // });
+
+  const mockFilePath = `${process.env.PWD}/src/mock/watch-providers.json`;
+
+  return readFile(mockFilePath)
+    .then((data) => JSON.parse(data.toString()))
+    .then((data) => {
+      // @ts-ignore
+      return data.results["US"].flatrate.map((provider) => ({
+        name: provider.provider_name,
+        logoPath: provider.logo_path,
+      }));
+    });
+};
+
 const getTvShowById = async (id: number): Promise<TTvShow> => {
-  // const watchProviders = await getWatchProviders(id);
+  const watchProviders = await getWatchProviders(id);
 
   // return axios.get(buildGetMovieByIdUrl(id)).then((res) => {
   //   return {
@@ -102,7 +141,7 @@ const getTvShowById = async (id: number): Promise<TTvShow> => {
         posterPath: data.poster_path,
         firstAirDate: data.first_air_date,
         overview: data.overview,
-        watchProviders: [],
+        watchProviders,
       };
     });
 };
@@ -116,7 +155,7 @@ const findTvShowById = privateProcedure
 const changeCardStatus = privateProcedure
   .input(
     z.object({
-      mediaId: z.number(),
+      showId: z.number(),
       fromStatus: z.enum([
         Status.WATCHING,
         Status.WANT_TO_WATCH,
@@ -129,7 +168,7 @@ const changeCardStatus = privateProcedure
     const updated = await ctx.prisma.userShow.update({
       where: {
         userId_showId: {
-          showId: input.mediaId,
+          showId: input.showId,
           userId: ctx.userId,
         },
       },
@@ -141,7 +180,7 @@ const changeCardStatus = privateProcedure
     return updated;
   });
 
-const deleteMedia = privateProcedure
+const deleteShow = privateProcedure
   .input(
     z.object({
       id: z.number(),
@@ -198,16 +237,16 @@ const addTvShow = privateProcedure
     })
   )
   .mutation(async ({ ctx, input }) => {
-    // Check if media exists
-    let media = await ctx.prisma.show.findUnique({
+    // Check if show exists
+    let show = await ctx.prisma.show.findUnique({
       where: {
         id: input.id,
       },
     });
 
-    // If the media doesn't exist in the DB, persist it
-    if (!media) {
-      media = await ctx.prisma.show.create({
+    // If the show doesn't exist in the DB, persist it
+    if (!show) {
+      show = await ctx.prisma.show.create({
         data: {
           id: input.id,
           title: input.name,
@@ -224,7 +263,7 @@ const addTvShow = privateProcedure
 
     const res = await ctx.prisma.userShow.create({
       data: {
-        showId: media.id,
+        showId: show.id,
         userId: ctx.userId,
         order: 0,
         status: input.status,
@@ -245,7 +284,7 @@ export const dashboardRouter = createTRPCRouter({
   tvShowSearch,
   findTvShowById,
   changeCardStatus,
-  deleteMedia,
+  deleteShow,
   addTvShow,
   getShow,
 });

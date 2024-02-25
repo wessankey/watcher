@@ -43,7 +43,7 @@ export const useDashboard = () => {
   const [selectedTvShowId, setSelectedTvShowId] = useState<number>();
   const [selectedTvShow, setSelectedTvShow] = useState<TTvShow>();
   const [isDragging, setIsDragging] = useState(false);
-  const [showAddMediaModal, setShowAddMediaModal] = useState(false);
+  const [showAddShowModal, setShowAddShowModal] = useState(false);
   const [addCardStatus, setAddCardStatus] = useState<TStatus>(
     Status.WANT_TO_WATCH
   );
@@ -88,7 +88,7 @@ export const useDashboard = () => {
           payload: {
             fromStatus: payload.fromStatus,
             toStatus: payload.toStatus,
-            showId: payload.mediaId,
+            showId: payload.showId,
           },
         });
 
@@ -97,7 +97,7 @@ export const useDashboard = () => {
       },
     });
 
-  const { mutate: deleteCardMutation } = api.dashboard.deleteMedia.useMutation({
+  const { mutate: deleteCardMutation } = api.dashboard.deleteShow.useMutation({
     onMutate: async (payload) => {
       if (!payload) return;
 
@@ -145,30 +145,30 @@ export const useDashboard = () => {
         },
       });
 
-      handleCloseAddMediaModal();
+      handleCloseAddShowModal();
 
       // Return previous data so we can revert if there was an error
       return { previousState };
     },
     onError: (err) => {
-      console.log("Error adding media:", err);
+      console.log("Error adding show:", err);
     },
   });
 
   const handleAddCardClick = (status: Status) => {
-    setShowAddMediaModal(true);
+    setShowAddShowModal(true);
     setAddCardStatus(status);
   };
 
-  const handleCloseAddMediaModal = () => {
-    setShowAddMediaModal(false);
+  const handleCloseAddShowModal = () => {
+    setShowAddShowModal(false);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over) {
       setIsDragging(false);
 
-      const mediaId = event.active.id as number;
+      const showId = event.active.id as number;
 
       const toStatus = event.over.id as Status;
       const fromStatus = flattenedLaneState.find(
@@ -178,9 +178,9 @@ export const useDashboard = () => {
       if (fromStatus === toStatus || !fromStatus) return;
 
       if (event.over.id === "DELETE_CARD_DROP_ZONE") {
-        deleteCardMutation({ id: mediaId, fromStatus });
+        deleteCardMutation({ id: showId, fromStatus });
       } else {
-        changeCardStatusMutation({ mediaId, fromStatus, toStatus });
+        changeCardStatusMutation({ showId, fromStatus, toStatus });
       }
     }
   };
@@ -203,7 +203,7 @@ export const useDashboard = () => {
     );
   };
 
-  const handleSelectMedia = (id: number) => {
+  const handleSelectShow = (id: number) => {
     setSelectedTvShowId(id);
   };
 
@@ -217,14 +217,14 @@ export const useDashboard = () => {
     addCardLoading,
     isDragging,
     dashboardState,
-    showAddMediaModal,
+    showAddShowModal,
     selectedTvShow,
     handleCloseTvShowDetailModal,
-    handleSelectMedia,
+    handleSelectShow,
     handleStartDragging,
     handleAddTvShow,
     handleAddCardClick,
-    handleCloseAddMediaModal,
+    handleCloseAddShowModal,
     handleDragEnd,
   };
 };
